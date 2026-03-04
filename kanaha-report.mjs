@@ -48,6 +48,8 @@ const TTL = {
   'pressure-meteo':     60 * 60,   // 1 hour — forecast model
   'ocean-waves':        60 * 60,   // 1 hour
   'forecast-nws':       60 * 60,   // 1 hour
+  'three-day-outlook':  60 * 60,   // 1 hour — 3-day session outlook
+  'radar-mrms':          5 * 60,   // 5 min — MRMS radar (triggered on rain events)
   'equipment-rec':      30 * 60,   // 30 min — follows tides
   'tides-noaa':         12 * 3600, // 12 hours — predictions stable
 };
@@ -197,6 +199,13 @@ async function main() {
   const tides = WIND_ONLY ? null : runModule('tides-noaa', '3');
   const nws = WIND_ONLY ? null : runModule('forecast-nws');
   const meteo = WIND_ONLY ? null : runModule('pressure-meteo', '3');
+  const outlook = WIND_ONLY ? null : runModule('three-day-outlook');
+
+  // Radar: only pull when precip warrants it (moderate/heavy/storm)
+  const precipCheck = buildPrecipSummary(nws, meteo);
+  const needsRadar = !WIND_ONLY && ['moderate', 'high'].includes(precipCheck?.rain_risk);
+  const radar = needsRadar ? runModule('radar-mrms') : null;
+  if (!WIND_ONLY && !needsRadar) process.stderr.write('  [radar-mrms] skipped (rain risk low)\n');
 
   // Equipment recommendations (uses tide data)
   let equipment = null;
@@ -357,7 +366,40 @@ async function main() {
 
     nws: nws?.daily?.slice(0, 2)?.map(p => `${p.name}: ${p.forecast}`) || [],
 
-    precipitation: buildPrecipSummary(nws, meteo),
+    precipitation: precipCheck,
+
+    // Rain triage mode — active when session window rain cancels the session
+    triage_mode: precipCheck?.rain_risk === 'heavy' || precipCheck?.rain_risk === 'storm' ||
+      outlook?.triage?.active === true,
+
+    three_day_outlook: outlook ? {
+      triage: outlook.triage,
+      days: outlook.days?.map(d => ({
+        date: d.date,
+        day: d.day,
+        window: d.session_window,
+        verdict: d.verdict,
+        wind_peak_kts: d.wind.peak_kts,
+        rain_level: d.rain.level,
+        rain_cancel: d.rain.cancel,
+        rain_reason: d.rain.reason,
+        pop_max_pct: d.rain.max_pop_pct,
+        qpf_mm: d.rain.total_qpf_mm,
+        cloud_avg_pct: d.cloud_avg_pct,
+        nws_summary: d.nws_summary,
+      })),
+    } : null,
+
+    radar: radar ? {
+      reflectivity_dbz: radar.kanaha?.reflectivity_dbz,
+      intensity: radar.kanaha?.intensity,
+      rain_rate_mmhr: radar.kanaha?.rain_rate_mmhr,
+      active: radar.kanaha?.active_precipitation,
+      nearby_threat: radar.maui_wide?.nearby_threat,
+      nearby_label: radar.maui_wide?.threat_label,
+      image_url: radar.radar_image_url,
+      fetched_utc: radar.fetched_utc,
+    } : null,
 
     // ── LLM Context — pre-computed analysis for interpretation ────
     analysis: buildAnalysisContext({
@@ -723,6 +765,17 @@ function printReport(r) {
   // Alerts
   for (const a of r.alerts) console.log(`  ⚠️  ${a}`);
 
+  // Triage mode banner
+  if (r.triage_mode) {
+    console.log(`\n  ⛔ TRIAGE MODE — SESSION CANCELLED: RAIN EVENT`);
+    if (r.three_day_outlook?.triage) {
+      const t = r.three_day_outlook.triage;
+      console.log(`  Storm duration: ${t.storm_days} day(s) | Total QPF: ${t.total_qpf_mm}mm`);
+      console.log(`  Next clear session: ${t.next_clear_session}${t.next_clear_verdict ? ' (' + t.next_clear_verdict + ')' : ''}`);
+    }
+    console.log('');
+  }
+
   // Verdict
   console.log(`\n  ${r.verdict}`);
 
@@ -854,6 +907,34 @@ function printReport(r) {
     } else if (ks?.reason) {
       console.log(`  🪁 ${ks.reason}`);
     }
+  }
+
+  // 3-day outlook
+  if (r.three_day_outlook?.days?.length > 0) {
+    console.log(`\n${thin}`);
+    console.log(`  3-DAY OUTLOOK`);
+    const verdictEmoji = { EPIC: '🟢', GOOD: '🟢', MARGINAL: '🟡', LIGHT: '🟡', 'NO-GO': '🔴', 'RAIN-CANCEL': '⛔' };
+    for (const d of r.three_day_outlook.days) {
+      const em = verdictEmoji[d.verdict] || '⚪';
+      const rainStr = d.rain_cancel ? ` ☔ ${d.rain_reason}` : (d.rain_level !== 'none' ? ` 🌧 ${d.rain_reason || d.rain_level}` : '');
+      console.log(`  ${em} ${d.date} ${d.day.substring(0,3).toUpperCase()}  ${d.window}  ${d.verdict.padEnd(12)} ~${d.wind_peak_kts}kts peak${rainStr}`);
+    }
+    if (r.three_day_outlook.triage?.active) {
+      console.log(`  ⚠️  Storm total: ${r.three_day_outlook.triage.total_qpf_mm}mm | Next session: ${r.three_day_outlook.triage.next_clear_session}`);
+    }
+  }
+
+  // Radar (only shown when triggered)
+  if (r.radar) {
+    console.log(`\n${thin}`);
+    console.log(`  RADAR (MRMS Hawaii)`);
+    const rIntensity = r.radar.intensity?.toUpperCase() || '?';
+    const activeStr = r.radar.active ? `${rIntensity} — ${r.radar.rain_rate_mmhr}mm/hr` : 'No precipitation at Kanaha';
+    console.log(`  Kanaha: ${activeStr}  (${r.radar.reflectivity_dbz ?? 'n/a'} dBZ)`);
+    if (r.radar.nearby_threat) {
+      console.log(`  ⚠️  Nearby cells: ${r.radar.nearby_label?.toUpperCase()} — storm approaching Maui area`);
+    }
+    console.log(`  Image: ${r.radar.image_url}`);
   }
 
   // Analysis context
