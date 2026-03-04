@@ -1,0 +1,47 @@
+---
+import Base from './Base.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<Base title={title} description={description}>
+  <nav class="flex items-center gap-2 text-sm text-ocean-400 mb-8">
+    <a href="/maui/" class="hover:text-ocean-300">Home</a>
+    <span>›</span>
+    <a href="/maui/docs/" class="hover:text-ocean-300">Docs</a>
+    <span>›</span>
+    <span class="text-ocean-300">{title}</span>
+  </nav>
+
+  <article class="prose prose-invert prose-ocean max-w-none
+    prose-headings:text-ocean-200
+    prose-h1:text-3xl prose-h1:mb-6
+    prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b prose-h2:border-ocean-800 prose-h2:pb-2
+    prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2 prose-h3:text-ocean-300
+    prose-p:text-gray-300 prose-p:leading-relaxed
+    prose-strong:text-white
+    prose-li:text-gray-300
+    prose-a:text-ocean-400 prose-a:no-underline hover:prose-a:text-ocean-300
+    prose-img:rounded-lg prose-img:border prose-img:border-ocean-800
+    prose-table:border-collapse
+    prose-th:bg-ocean-900 prose-th:text-ocean-200 prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:border prose-th:border-ocean-800
+    prose-td:px-4 prose-td:py-2 prose-td:border prose-td:border-ocean-800
+  ">
+    <slot />
+  </article>
+
+  <nav class="mt-12 pt-6 border-t border-ocean-800">
+    <h3 class="text-sm font-semibold text-ocean-400 mb-3">Documentation</h3>
+    <ul class="space-y-1">
+      <li><a href="/maui/docs/equipment/" class="text-ocean-400 hover:text-ocean-300 text-sm">🏄 Equipment Inventory</a></li>
+      <li><a href="/maui/docs/algorithms/" class="text-ocean-400 hover:text-ocean-300 text-sm">⚙️ Prediction Algorithms</a></li>
+      <li><a href="/maui/docs/data-sources/" class="text-ocean-400 hover:text-ocean-300 text-sm">📡 Data Sources & Sensors</a></li>
+      <li><a href="/maui/docs/conditions/" class="text-ocean-400 hover:text-ocean-300 text-sm">🌊 Conditions Guide</a></li>
+    </ul>
+  </nav>
+</Base>

@@ -1,0 +1,26 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const docs = [
+  { title: '🏄 Equipment Inventory', href: '/maui/docs/equipment/', desc: 'Complete gear list with specs, images, and wind-condition pairings for every piece of equipment.' },
+  { title: '⚙️ Prediction Algorithms', href: '/maui/docs/algorithms/', desc: 'Wind prediction, thermal modeling, taper forecasting, and confidence assessment methods.' },
+  { title: '📡 Data Sources & Sensors', href: '/maui/docs/data-sources/', desc: 'Sensor network, NDBC buoys, NOAA tides, NWS forecasts, and API endpoints.' },
+  { title: '🌊 Conditions Guide', href: '/maui/docs/conditions/', desc: 'Wind regimes, wave types, bathymetry, session timing, and safety considerations at Kanaha.' },
+];
+---
+
+<Base title="Documentation">
+  <h1 class="text-3xl font-bold text-white mb-2">Documentation</h1>
+  <p class="text-ocean-400 mb-8">How the Kanaha forecast system works — from sensors to equipment recommendations.</p>
+
+  <div class="space-y-4">
+    {docs.map((doc) => (
+      <a href={doc.href} class="block bg-ocean-900/50 border border-ocean-800 rounded-lg p-5 hover:border-ocean-600 hover:bg-ocean-900/80 transition group">
+        <h2 class="text-lg font-semibold text-white group-hover:text-ocean-200 transition">{doc.title}</h2>
+        <p class="text-sm text-ocean-400 mt-1">{doc.desc}</p>
+      </a>
+    ))}
+  </div>
+
+  <a href="/maui/" class="text-ocean-400 hover:text-ocean-300 text-sm mt-8 inline-block">&larr; Back to forecasts</a>
+</Base>
