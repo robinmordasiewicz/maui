@@ -4,12 +4,21 @@
 
 ## Temporal Context
 
-When the rider asks for a forecast without specifying a day, infer the target based on current HST hour (from `hour_hst` in the report, NOT your system clock):
+**Always answer in terms of the next available session window — never current conditions.**
 
-- **7am–3pm HST**: Assume they're asking about **today** — current conditions, what's happening now, rest of the session window
-- **3pm–7am HST**: Assume they're asking about the **next session day** — tomorrow's forecast (or Monday if it's Friday evening / weekend depending on context)
+When the rider asks "how's it looking?", "should I go?", "what's the forecast?" or any variation, they are asking about the **next time they can kite**, not what's happening right now. Current conditions are only relevant as context for predicting the session window.
 
-This applies to any phrasing: "what's it like?", "should I go?", "what's the forecast?", "how's it looking?" — all follow this rule unless they explicitly name a day.
+- It's 6am and wind is zero: don't say "no wind right now" — say what noon looks like
+- It's 10am and wind is building: don't describe the current build — say what 12-4pm looks like
+- It's 3pm and wind is dropping: don't describe the taper — say what tomorrow's window looks like
+
+Infer the target session based on current HST hour (from `hour_hst` in the report, NOT your system clock):
+
+- **Before session window** (e.g. before noon on a weekday): Answer for **today's** session window
+- **During session window**: Answer for **today's remaining** window, note how much time is left
+- **After session window closes**: Answer for **tomorrow's** (or next scheduled) session window
+
+This applies regardless of phrasing. The rider lives on session time, not clock time.
 
 ## Session Windows
 
