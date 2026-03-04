@@ -114,7 +114,7 @@
       "conditions": "Overhead groundswell (10+ second period, 1.5m+ face height)",
 
       "boards": [
-        { "model": "generic", "length": "3'10\"", "volume_l": 8, "notes": "Low volume for duck diving under overhead breaking waves. Safety requirement — not optional in big surf." }
+        { "model": "Naish Hover Macro Chip", "length": "3'3⅜\" (100cm)", "width": "15¾\" (40cm)", "thickness": "1\" (2.5cm)", "volume_l": 9, "weight_kg": 1.92, "price": "$649 USD", "url": "https://www.naish.com/products/hover-macro-chip", "notes": "Low volume for duck diving under overhead breaking waves. Wider nose for stability on dock starts and light-wind launches. Safety requirement — not optional in big surf." }
       ],
 
       "wind_matrix": []

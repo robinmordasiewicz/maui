@@ -181,7 +181,7 @@ The equipment-rec module should identify the **minimum tide level during the pla
 ### Riding Style 2: Wave Foil
 **Conditions**: Overhead+ groundswell (10+ second period, 1.5m+ face height)
 
-**Board**: 3'10", 8L — **safety-critical**. Low volume required for duck diving under breaking waves on wipeouts. Too much buoyancy = can't get under crashing waves. This is not optional in big surf.
+**Board**: Naish Hover Macro Chip, 3'3⅜" (100cm), 9L, 1.92kg — **safety-critical**. Low volume required for duck diving under breaking waves on wipeouts. Too much buoyancy = can't get under crashing waves. This is not optional in big surf.
 
 **Kite/wing/line matrix**: TBD
 
