@@ -1,0 +1,10 @@
+{
+  "name": "maui-wx",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Kanaha watersport forecast system",
+  "dependencies": {
+    "playwright": "^1.52.0"
+  }
+}

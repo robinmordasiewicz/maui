@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "rider": "robin",
+  "notes": "Equipment correlations for kite foilboarding at Kanaha/Old Mans. Two riding styles: 'freeride_foil' (windswell/small groundswell gliding) and 'wave_foil' (overhead groundswell, TBD).",
+
+  "riding_styles": {
+    "freeride_foil": {
+      "desc": "Gliding on windswell and small-to-medium groundswell. Emphasis on efficiency, glide, and bump riding.",
+      "conditions": "Wind 12-30+ kts, windswell or small groundswell",
+
+      "kite_inventory": [
+        { "size_m": 2.2, "brand": "generic", "notes": "Strongest wind kite, 20+ kts trades" },
+        { "size_m": 2.8, "brand": "generic", "notes": "Often skipped — jump from 3.4 to 2.2" },
+        { "size_m": 3.4, "brand": "generic", "notes": "Active trade winds 15+ kts" },
+        { "size_m": 4.0, "brand": "generic", "notes": "Light trades / accelerated sea breeze" },
+        { "size_m": 5.0, "brand": "generic", "notes": "Lightest wind, pure sea breeze" }
+      ],
+
+      "front_wings": [
+        { "model": "Armstrong HA1080", "area_cm2": 1080, "type": "high_aspect", "notes": "Maximum lift/glide, lightest wind" },
+        { "model": "Armstrong HA780", "area_cm2": 780, "type": "high_aspect", "notes": "Versatile, moderate wind" },
+        { "model": "Armstrong UHA570", "area_cm2": 570, "type": "ultra_high_aspect", "notes": "Strong wind, speed-oriented, less drag" }
+      ],
+
+      "tail_wings": [
+        { "model": "Armstrong Glide220", "area_cm2": 220, "type": "glide", "notes": "Maximum glide/stability, pairs with larger fronts in lighter wind" },
+        { "model": "Armstrong Speed180", "area_cm2": 180, "type": "speed", "notes": "Less drag, more speed, 25+ kts" }
+      ],
+
+      "boards": [
+        { "model": "Armstrong Noah Flegel Pro Board", "length": "4'2\"", "volume_l": 19, "notes": "Small wave / windswell / freeride foil board" }
+      ],
+
+      "line_lengths_m": [16, 18, 20, 22, 24, 25, 26],
+
+      "wind_matrix": [
+        {
+          "regime": "pure_sea_breeze",
+          "wind_kts": [12, 15],
+          "kite_m": 5.0,
+          "lines_m": 26,
+          "front_wing": "HA1080",
+          "tail_wing": "Glide220",
+          "notes": "Lightest rideable. Long lines for max arc/power. Biggest wings for lift."
+        },
+        {
+          "regime": "light_trades",
+          "wind_kts": [14, 17],
+          "kite_m": 4.0,
+          "lines_m": 25,
+          "front_wing": "HA1080",
+          "tail_wing": "Glide220",
+          "notes": "Sea breeze accelerated by gentle trades."
+        },
+        {
+          "regime": "light_trades_upper",
+          "wind_kts": [15, 18],
+          "kite_m": 4.0,
+          "lines_m": 25,
+          "front_wing": "HA780",
+          "tail_wing": "Glide220",
+          "notes": "Slightly stronger — HA780 gives better speed with less drag."
+        },
+        {
+          "regime": "trades_active",
+          "wind_kts": [15, 20],
+          "kite_m": 3.4,
+          "lines_m": 24,
+          "front_wing": "HA780",
+          "tail_wing": "Glide220",
+          "notes": "Active trade winds. Standard trade wind setup."
+        },
+        {
+          "regime": "trades_strong",
+          "wind_kts": [20, 22],
+          "kite_m": 2.2,
+          "lines_m": 24,
+          "front_wing": "HA780",
+          "tail_wing": "Glide220",
+          "notes": "Skip 2.8, go straight to 2.2. Lighter trades end of range."
+        },
+        {
+          "regime": "trades_powered",
+          "wind_kts": [22, 25],
+          "kite_m": 2.2,
+          "lines_m": 22,
+          "front_wing": "UHA570",
+          "tail_wing": "Glide220",
+          "notes": "Shorter lines + smaller wing to reduce power and drag."
+        },
+        {
+          "regime": "trades_full",
+          "wind_kts": [25, 30],
+          "kite_m": 2.2,
+          "lines_m": [18, 20],
+          "front_wing": "UHA570",
+          "tail_wing": "Speed180",
+          "notes": "Speed tail, short lines. Managing overpowering."
+        },
+        {
+          "regime": "trades_overpowering",
+          "wind_kts": [30, 40],
+          "kite_m": 2.2,
+          "lines_m": [16, 18],
+          "front_wing": "UHA570",
+          "tail_wing": "Speed180",
+          "notes": "Survival mode. Shortest lines to depower."
+        }
+      ]
+    },
+
+    "wave_foil": {
+      "desc": "Overhead+ groundswell conditions. Smaller, low-volume board required for duck diving under breaking waves on wipeouts. Safety-critical: too much buoyancy = can't get under crashing waves.",
+      "conditions": "Overhead groundswell (10+ second period, 1.5m+ face height)",
+
+      "boards": [
+        { "model": "generic", "length": "3'10\"", "volume_l": 8, "notes": "Low volume for duck diving under overhead breaking waves. Safety requirement — not optional in big surf." }
+      ],
+
+      "wind_matrix": []
+    }
+  }
+}

@@ -1,0 +1,73 @@
+name: Daily Kanaha Forecast
+
+on:
+  schedule:
+    # Run twice daily: 7am and noon HST (17:00 and 22:00 UTC)
+    - cron: '0 17 * * *'   # 7am HST — morning preview
+    - cron: '0 22 * * *'   # noon HST — midday update with live data
+  workflow_dispatch:        # manual trigger
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: forecast
+  cancel-in-progress: true
+
+jobs:
+  forecast:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npx playwright install chromium --with-deps
+
+      - name: Install site dependencies
+        run: cd site && npm install
+
+      - name: Generate report
+        env:
+          IK_USER: ${{ secrets.IK_USER }}
+          IK_PASS: ${{ secrets.IK_PASS }}
+        run: |
+          mkdir -p output
+          node kanaha-report.mjs --json --no-cache > output/latest.json
+
+      - name: Generate forecast post
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/generate-forecast.mjs --file output/latest.json
+
+      - name: Commit forecast post
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add site/src/content/blog/
+          git diff --cached --quiet || git commit -m "📡 Forecast: $(TZ=Pacific/Honolulu date '+%Y-%m-%d %H:%M HST')"
+          git push
+
+      - name: Build site
+        run: cd site && npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
