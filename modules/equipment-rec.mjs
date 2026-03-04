@@ -170,46 +170,95 @@ function recommendSessionMast(tideData, sessionStartHst, durationHours = 2, ridi
 // ── Load equipment profiles ──────────────────────────────────────────
 const PROFILES = JSON.parse(readFileSync(join(__dirname, '..', 'equipment-profiles.json'), 'utf-8'));
 
+// ── Gust Factor Analysis ─────────────────────────────────────────────
+function analyzeGustFactor(avgKts, gustKts) {
+  if (!gustKts || !avgKts || avgKts === 0) return { ratio: 1, delta_kts: 0, delta_pct: 0, quality: 'unknown' };
+
+  const ratio = gustKts / avgKts;
+  const delta = gustKts - avgKts;
+  const pct = Math.round((ratio - 1) * 100);
+
+  let quality, note;
+  if (ratio <= 1.2) {
+    quality = 'smooth';
+    note = 'Consistent power, favorable conditions. Size to steady.';
+  } else if (ratio <= 1.35) {
+    quality = 'moderate';
+    note = 'Normal gustiness. Kite/lines for gusts, front wing for steady.';
+  } else if (ratio <= 1.5) {
+    quality = 'gusty';
+    note = 'Significant lull-blast cycles. Kite/lines must handle gusts. Demanding.';
+  } else {
+    quality = 'very_gusty';
+    note = 'Dangerous swings. Expert only. Size everything for gusts.';
+  }
+
+  return { ratio: Math.round(ratio * 100) / 100, delta_kts: Math.round(delta * 10) / 10, delta_pct: pct, quality, note };
+}
+
 // ── Kite + Foil Recommendation ───────────────────────────────────────
-function recommendKiteSetup(windAvgKts, ridingStyle = 'freeride_foil') {
+// Kite/lines sized to GUST value (must handle blasts)
+// Front wing sized to STEADY value (must have lift in lulls)
+// Tail wing switches to Speed180 when GUST > 25kts
+function recommendKiteSetup(windAvgKts, windGustKts, ridingStyle = 'freeride_foil') {
   const style = PROFILES.riding_styles[ridingStyle];
   if (!style || !style.wind_matrix?.length) return null;
 
-  // Find the matching wind bracket
-  let match = null;
+  const gustFactor = analyzeGustFactor(windAvgKts, windGustKts);
+  const effectiveGust = windGustKts || windAvgKts;
+
+  // Kite + lines: match to GUST value
+  let kiteMatch = null;
+  for (const entry of style.wind_matrix) {
+    const [lo, hi] = entry.wind_kts;
+    if (effectiveGust >= lo && effectiveGust <= hi) {
+      kiteMatch = entry;
+    }
+  }
+  // Edge: above max
+  if (!kiteMatch && effectiveGust > style.wind_matrix[style.wind_matrix.length - 1].wind_kts[1]) {
+    kiteMatch = style.wind_matrix[style.wind_matrix.length - 1];
+  }
+
+  // Front wing: match to STEADY value
+  let wingMatch = null;
   for (const entry of style.wind_matrix) {
     const [lo, hi] = entry.wind_kts;
     if (windAvgKts >= lo && windAvgKts <= hi) {
-      // Prefer narrower/higher match (later entries for stronger wind)
-      match = entry;
+      wingMatch = entry;
     }
   }
-
-  // Edge cases
-  if (!match && windAvgKts < style.wind_matrix[0].wind_kts[0]) {
-    return { recommendation: null, reason: `Wind ${windAvgKts}kts below minimum for ${ridingStyle} (need ${style.wind_matrix[0].wind_kts[0]}+kts)` };
+  // Edge: below min
+  if (!wingMatch && windAvgKts < style.wind_matrix[0].wind_kts[0]) {
+    return { recommendation: null, reason: `Steady wind ${windAvgKts}kts below minimum for ${ridingStyle} (need ${style.wind_matrix[0].wind_kts[0]}+kts)`, gust_factor: gustFactor };
   }
-  if (!match && windAvgKts > style.wind_matrix[style.wind_matrix.length - 1].wind_kts[1]) {
-    match = style.wind_matrix[style.wind_matrix.length - 1];
-  }
+  if (!wingMatch) wingMatch = kiteMatch;
 
-  if (!match) return null;
+  if (!kiteMatch) return null;
+
+  // Tail wing override: Speed180 when gusts > 25kts
+  const tailWing = effectiveGust >= 25 ? 'Speed180' : (wingMatch?.tail_wing || kiteMatch.tail_wing);
 
   return {
-    regime: match.regime,
-    wind_range_kts: match.wind_kts,
-    kite_m: match.kite_m,
-    lines_m: Array.isArray(match.lines_m) ? match.lines_m : [match.lines_m],
-    front_wing: match.front_wing,
-    tail_wing: match.tail_wing,
-    notes: match.notes,
+    regime: kiteMatch.regime,
+    wind_steady_kts: windAvgKts,
+    wind_gust_kts: effectiveGust,
+    gust_factor: gustFactor,
+    kite_m: kiteMatch.kite_m,
+    lines_m: Array.isArray(kiteMatch.lines_m) ? kiteMatch.lines_m : [kiteMatch.lines_m],
+    front_wing: wingMatch?.front_wing || kiteMatch.front_wing,
+    tail_wing: tailWing,
+    sizing_notes: gustFactor.quality === 'smooth'
+      ? 'Smooth conditions — all gear sized to steady wind.'
+      : `Kite/lines sized for ${effectiveGust}kts gusts. Front wing (${wingMatch?.front_wing || kiteMatch.front_wing}) sized for ${windAvgKts}kts steady — need lift in lulls.`,
+    notes: kiteMatch.notes,
   };
 }
 
 // ── Equipment profile (full) ─────────────────────────────────────────
 function buildEquipmentProfile(tideLevelFt, windAvgKts, windGustKts) {
   const mast = recommendMast(tideLevelFt);
-  const kiteSetup = windAvgKts > 0 ? recommendKiteSetup(windAvgKts) : null;
+  const kiteSetup = windAvgKts > 0 ? recommendKiteSetup(windAvgKts, windGustKts) : null;
 
   return { mast, kite_setup: kiteSetup };
 }

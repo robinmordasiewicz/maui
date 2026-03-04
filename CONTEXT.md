@@ -176,6 +176,19 @@ The equipment-rec module should identify the **minimum tide level during the pla
 
 **Pattern**: As wind increases → reduce kite size → shorten lines → shrink front wing → switch to speed tail. Each step depowers progressively.
 
+### Gust Factor — Equipment Sizing
+Equipment is sized differently based on steady vs gust values:
+- **Kite + lines**: Sized to **gust value** — must handle blasts safely. Being overpowered is dangerous.
+- **Front wing**: Sized to **steady value** — need lift in lulls to stay on foil.
+- **Tail wing**: Switch to Speed180 when **gusts exceed 25kts**.
+
+| Gust Ratio | Delta | Quality | Meaning |
+|------------|-------|---------|---------|
+| 1.0–1.2x | 0–20% | Smooth | Consistent power, size to steady, most favorable |
+| 1.2–1.35x | 20–35% | Moderate | Normal trades, kite for gusts, wing for steady |
+| 1.35–1.5x | 35–50% | Gusty | Demanding, kite must handle blasts, rider fatigue |
+| 1.5x+ | 50%+ | Very gusty | Expert only, dangerous swings, everything sized for gusts |
+
 **Note**: 2.8m kite is owned but typically skipped — jump from 3.4m straight to 2.2m.
 
 ### Riding Style 2: Wave Foil
