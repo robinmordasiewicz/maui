@@ -30,11 +30,10 @@
  * Outputs JSON with thermal state, predicted wind direction effect, and venturi index.
  */
 
-import { chromium } from 'playwright';
+import { loadSession } from './ik-session.mjs';
 import https from 'https';
 
-const IK_USER = process.env.IK_USER || 'robin@mordasiewicz.com';
-const IK_PASS = process.env.IK_PASS || 'mum5th3w0rd';
+
 
 function fetchText(url) {
   return new Promise((resolve, reject) => {
@@ -244,17 +243,14 @@ function computeIsthmusHeatIndex(stationTemps) {
 
 // ── Main ─────────────────────────────────────────────────────────────
 async function main() {
-  const browser = await chromium.launch({ headless: true, args: ['--disable-blink-features=AutomationControlled'] });
-  const context = await browser.newContext({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' });
-  const page = await context.newPage();
-  await page.addInitScript(() => { Object.defineProperty(navigator, 'webdriver', { get: () => false }); });
-
-  process.stderr.write('isthmus-thermal: logging in... ');
-  await page.goto('https://secure.ikitesurf.com/?app=wx&rd=login', { waitUntil: 'networkidle' });
-  await page.fill('#login-username', IK_USER);
-  await page.fill('#login-password', IK_PASS);
-  await Promise.all([page.waitForNavigation({ waitUntil: 'load', timeout: 20000 }), page.click('input[name="iwok.x"]')]);
-  if (!page.url().includes('wx.ikitesurf.com')) await page.goto('https://wx.ikitesurf.com/map', { waitUntil: 'load' });
+  process.stderr.write('isthmus-thermal: loading session... ');
+  let browser, page, token;
+  try {
+    ({ browser, page, token } = await loadSession());
+  } catch (e) {
+    process.stderr.write(`FAILED\n  ${e.message}\n`);
+    process.exit(1);
+  }
   process.stderr.write('done\n');
 
   // Fetch all station data

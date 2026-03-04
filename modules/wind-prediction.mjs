@@ -12,8 +12,8 @@
  * Requires: Authenticated iKitesurf session (Playwright)
  */
 
-import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'fs';
+import { loadSession } from './ik-session.mjs';
 import https from 'https';
 
 function fetchText(url) {
@@ -35,8 +35,7 @@ function fetchJSON(url) {
   });
 }
 
-const IK_USER = process.env.IK_USER || 'robin@mordasiewicz.com';
-const IK_PASS = process.env.IK_PASS || 'mum5th3w0rd';
+
 
 // ============================================================
 // STATION NETWORK — Upwind reference stations for NE trades
@@ -472,29 +471,14 @@ function predictTaper(currentAvg, currentHstHour, historicalPattern, upwindTrend
 // ============================================================
 
 async function main() {
-  const browser = await chromium.launch({
-    headless: true,
-    args: ['--disable-blink-features=AutomationControlled'],
-  });
-  const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.117 Safari/537.36',
-  });
-  const page = await context.newPage();
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'webdriver', { get: () => false });
-  });
-
-  // Login
-  process.stderr.write('wind-prediction: logging in... ');
-  await page.goto('https://secure.ikitesurf.com/?app=wx&rd=login', { waitUntil: 'networkidle' });
-  await page.fill('#login-username', IK_USER);
-  await page.fill('#login-password', IK_PASS);
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: 'load', timeout: 20000 }),
-    page.click('input[name="iwok.x"]'),
-  ]);
-  if (!page.url().includes('wx.ikitesurf.com')) {
-    await page.goto('https://wx.ikitesurf.com/map', { waitUntil: 'load', timeout: 20000 });
+  // Load saved session — no login, no duplicate session conflict
+  process.stderr.write('wind-prediction: loading session... ');
+  let browser, page, token;
+  try {
+    ({ browser, page, token } = await loadSession());
+  } catch (e) {
+    process.stderr.write(`FAILED\n  ${e.message}\n`);
+    process.exit(1);
   }
   process.stderr.write('done\n');
 
