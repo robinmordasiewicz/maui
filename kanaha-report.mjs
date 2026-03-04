@@ -49,6 +49,7 @@ const TTL = {
   'ocean-waves':        60 * 60,   // 1 hour
   'forecast-nws':       60 * 60,   // 1 hour
   'three-day-outlook':  60 * 60,   // 1 hour — 3-day session outlook
+  'north-pacific-swell': 60 * 60,  // 1 hour — North Pacific storm & swell early warning
   'radar-mrms':          5 * 60,   // 5 min — MRMS radar (triggered on rain events)
   'equipment-rec':      30 * 60,   // 30 min — follows tides
   'tides-noaa':         12 * 3600, // 12 hours — predictions stable
@@ -200,6 +201,7 @@ async function main() {
   const nws = WIND_ONLY ? null : runModule('forecast-nws');
   const meteo = WIND_ONLY ? null : runModule('pressure-meteo', '3');
   const outlook = WIND_ONLY ? null : runModule('three-day-outlook');
+  const npSwell = WIND_ONLY ? null : runModule('north-pacific-swell');
 
   // Radar: only pull when precip warrants it (moderate/heavy/storm)
   const precipCheck = buildPrecipSummary(nws, meteo);
@@ -389,6 +391,26 @@ async function main() {
         nws_summary: d.nws_summary,
       })),
     } : null,
+
+    north_pacific_swell: npSwell ? {
+      level: npSwell.summary?.level,
+      level_label: npSwell.summary?.level_label,
+      wave_event: npSwell.summary?.wave_event_active,
+      cancel_plans: npSwell.summary?.cancel_plans_alert,
+      max_swell_m: npSwell.summary?.max_swell_pauwela_m,
+      max_period_s: npSwell.summary?.max_period_s,
+      wave_event_dates: npSwell.summary?.wave_event_dates,
+      cancel_plans_dates: npSwell.summary?.cancel_plans_dates,
+      arrivals: npSwell.swell_arrivals?.filter(a => a.wave_event),
+      pauwela_7day: npSwell.pauwela_7day,
+      surf_discussion: npSwell.surf_forecast?.discussion,
+      maui_north_today: npSwell.surf_forecast?.maui_north_today,
+      maui_north_tomorrow: npSwell.surf_forecast?.maui_north_tomorrow,
+      np_waypoints: npSwell.north_pacific_waypoints,
+    } : null,
+
+    // Wave event mode — triggered when cancel-plans swell predicted
+    wave_event_mode: npSwell?.summary?.cancel_plans_alert === true,
 
     radar: radar ? {
       reflectivity_dbz: radar.kanaha?.reflectivity_dbz,
@@ -765,6 +787,15 @@ function printReport(r) {
   // Alerts
   for (const a of r.alerts) console.log(`  ⚠️  ${a}`);
 
+  // Wave event banner (positive extreme)
+  if (r.wave_event_mode) {
+    const np = r.north_pacific_swell;
+    console.log(`\n  🌊 WAVE EVENT — CANCEL YOUR PLANS`);
+    console.log(`  ${np?.level_label?.toUpperCase() || 'BIG SURF'} | Max: ${np?.max_swell_m}m @ ${np?.max_period_s}s`);
+    if (np?.cancel_plans_dates?.length) console.log(`  Dates: ${np.cancel_plans_dates.join(', ')}`);
+    console.log('');
+  }
+
   // Triage mode banner
   if (r.triage_mode) {
     console.log(`\n  ⛔ TRIAGE MODE — SESSION CANCELLED: RAIN EVENT`);
@@ -909,15 +940,71 @@ function printReport(r) {
     }
   }
 
+  // North Pacific swell / wave event section
+  if (r.north_pacific_swell) {
+    const np = r.north_pacific_swell;
+    console.log(`\n${thin}`);
+    console.log(`  NORTH PACIFIC SWELL  (7-day outlook)`);
+
+    // NWS discussion
+    if (np.surf_discussion) {
+      // Print first 2 sentences only
+      const sentences = np.surf_discussion.replace(/\n/g, ' ').split(/(?<=[.!])\s+/);
+      console.log(`  NWS: ${sentences.slice(0, 2).join(' ')}`);
+    }
+
+    // Maui north shore heights from NWS
+    if (np.maui_north_today || np.maui_north_tomorrow) {
+      const t = np.maui_north_today;
+      const tm = np.maui_north_tomorrow;
+      const todayStr = t ? `today ${t.am_ft[0]}-${t.am_ft[1]}ft AM / ${t.pm_ft[0]}-${t.pm_ft[1]}ft PM` : '';
+      const tomorStr = tm ? `tomorrow ${tm.am_ft[0]}-${tm.am_ft[1]}ft AM / ${tm.pm_ft[0]}-${tm.pm_ft[1]}ft PM` : '';
+      console.log(`  North shore: ${[todayStr, tomorStr].filter(Boolean).join(' → ')}`);
+    }
+
+    // 7-day daily swell at Pauwela
+    if (np.pauwela_7day?.length) {
+      const swellEmoji = { XXL: '🔴', pumping: '🟠', fun: '🟢', small: '🟡', flat: '⚪' };
+      console.log(`  Pauwela 7-day groundswell:`);
+      for (const d of np.pauwela_7day) {
+        if (!d.swell_max_m && d.level === 'flat') continue;
+        const em = swellEmoji[d.level] || '⚪';
+        const cpFlag = d.cancel_plans ? ' ⚡ CANCEL PLANS' : d.wave_event ? ' 🌊 WAVE EVENT' : '';
+        console.log(`  ${em} ${d.date}  ${d.swell_max_m}m@${d.swell_period_s}s ${d.direction_label}  ${d.level}${cpFlag}`);
+      }
+    }
+
+    // Incoming swell arrivals from N. Pacific storms
+    if (np.arrivals?.length) {
+      console.log(`  Incoming wave events:`);
+      for (const a of np.arrivals) {
+        console.log(`  🌊 ${a.level_label} — arrives ~${a.arrival_hst}`);
+        console.log(`     Source: ${a.source} | ${a.observed_height_m}m@${a.observed_period_s}s ${a.direction_label} | ${a.dist_nm}nm away`);
+        console.log(`     Est. at Pauwela: ${a.est_height_pauwela_m}m@${a.est_period_s}s`);
+      }
+    }
+
+    // North Pacific storm status summary
+    const activeStorms = (np.np_waypoints || []).filter(w => (w.peak_7day_m || 0) >= 3.0 && !w.error);
+    if (activeStorms.length) {
+      console.log(`  N. Pacific storms (7-day peak):`);
+      for (const w of activeStorms) {
+        console.log(`  ⚡ ${w.name}: ${w.peak_7day_m}m@${w.peak_7day_period_s}s`);
+      }
+    }
+  }
+
   // 3-day outlook
   if (r.three_day_outlook?.days?.length > 0) {
     console.log(`\n${thin}`);
     console.log(`  3-DAY OUTLOOK`);
-    const verdictEmoji = { EPIC: '🟢', GOOD: '🟢', MARGINAL: '🟡', LIGHT: '🟡', 'NO-GO': '🔴', 'RAIN-CANCEL': '⛔' };
+    const verdictEmoji = { EPIC: '🟢', GOOD: '🟢', MARGINAL: '🟡', LIGHT: '🟡', 'NO-GO': '🔴', 'RAIN-CANCEL': '⛔', 'WAVE-EVENT': '🌊' };
     for (const d of r.three_day_outlook.days) {
       const em = verdictEmoji[d.verdict] || '⚪';
       const rainStr = d.rain_cancel ? ` ☔ ${d.rain_reason}` : (d.rain_level !== 'none' ? ` 🌧 ${d.rain_reason || d.rain_level}` : '');
-      console.log(`  ${em} ${d.date} ${d.day.substring(0,3).toUpperCase()}  ${d.window}  ${d.verdict.padEnd(12)} ~${d.wind_peak_kts}kts peak${rainStr}`);
+      const swellStr = d.swell?.cancel_plans ? ` 🌊 ${d.swell.height_m}m@${d.swell.period_s}s ${d.swell.direction} — CANCEL PLANS`
+        : d.swell?.wave_event ? ` 🌊 ${d.swell.height_m}m@${d.swell.period_s}s ${d.swell.direction}` : '';
+      console.log(`  ${em} ${d.date} ${d.day.substring(0,3).toUpperCase()}  ${d.window}  ${d.verdict.padEnd(12)} ~${d.wind_peak_kts}kts${rainStr}${swellStr}`);
     }
     if (r.three_day_outlook.triage?.active) {
       console.log(`  ⚠️  Storm total: ${r.three_day_outlook.triage.total_qpf_mm}mm | Next session: ${r.three_day_outlook.triage.next_clear_session}`);

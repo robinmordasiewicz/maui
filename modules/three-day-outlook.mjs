@@ -171,6 +171,9 @@ async function main() {
     // NWS narrative for this date
     const nwsNarratives = nwsDailyMap[date] || [];
 
+    // Swell from Open-Meteo marine at Pauwela for this date
+    const swellParams = ['swell_wave_height','swell_wave_period','swell_wave_direction'].join(',');
+    // (swell data fetched once below, merged after loop)
     days.push({
       date,
       day: dayName,
@@ -199,8 +202,33 @@ async function main() {
         cloud_pct: h.cloud,
         weathercode: h.code,
       })),
+      swell: null, // populated below
     });
   }
+
+  // Fetch swell at Pauwela for session days
+  try {
+    const swellUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=21.018&longitude=-156.421&daily=swell_wave_height_max,swell_wave_period_max,swell_wave_direction_dominant&forecast_days=4&timezone=Pacific/Honolulu`;
+    const sd = await fetchJSON(swellUrl);
+    const SWELL_CANCEL_PLANS_M = 2.0;
+    const SWELL_CANCEL_PLANS_S = 14;
+    for (const day of days) {
+      const idx = (sd.daily?.time || []).indexOf(day.date);
+      if (idx < 0) continue;
+      const ht = sd.daily.swell_wave_height_max?.[idx] || 0;
+      const period = sd.daily.swell_wave_period_max?.[idx] || 0;
+      const dir = sd.daily.swell_wave_direction_dominant?.[idx];
+      const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+      const dirLabel = dir != null ? dirs[Math.round(dir / 22.5) % 16] : '?';
+      // North-facing: from NW-NE arc (dir >= 270 or dir <= 90)
+      const northFacing = dir != null && (dir >= 270 || dir <= 90);
+      const waveEvent = northFacing && ht >= 1.0 && period >= 12;
+      const cancelPlans = northFacing && ht >= SWELL_CANCEL_PLANS_M && period >= SWELL_CANCEL_PLANS_S;
+      day.swell = { height_m: ht, period_s: period, dir_deg: dir, direction: dirLabel, wave_event: waveEvent, cancel_plans: cancelPlans };
+      // Update verdict for wave events
+      if (cancelPlans && day.verdict !== 'RAIN-CANCEL') day.verdict = 'WAVE-EVENT';
+    }
+  } catch { /* swell data optional */ }
 
   // Triage assessment — are we in a multi-day rain event?
   const cancelDays = days.filter(d => d.rain.cancel);

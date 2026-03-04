@@ -26,6 +26,45 @@ The rider will pick a 2-hour block within the available window. Equipment recs s
 
 When forecasting, default to the appropriate window unless the rider specifies hours.
 
+## Wave Event Mode (Positive Extreme)
+
+Wave events are the opposite end of the extreme spectrum from rain triage. When a significant groundswell arrives, it takes priority over everything — including work and family commitments. Treat wave events with the same urgency as triage mode, but from the excitement end.
+
+### Swell Alert Levels (at Pauwela)
+
+| Level | Height | Period | Meaning |
+|-------|--------|--------|---------|
+| `flat` | < 0.5m | any | Nothing |
+| `small` | 0.5–1m | 10s+ | Ankle to waist — warmup |
+| `fun` | 1–2m | 12s+ | Chest to overhead — good session |
+| `pumping` | 2–3m | 14s+ | Overhead+ — **CANCEL PLANS** |
+| `XXL` | 3m+ | 16s+ | Double overhead+ — **RARE MAJOR EVENT** |
+
+### Direction Filter
+Only NW-to-NE arc groundswell (direction FROM 270°–90° via north) activates the Maui north shore. Pure east swell (90°) is mostly windswell and doesn't count. Optimal: NNW-N-NNE.
+
+### Wave Event Mode (cancel_plans = true)
+When Pauwela swell ≥ 2m @ ≥ 14s from the north arc:
+- **Lead with**: 🌊 WAVE EVENT banner — height, period, direction, arrival date
+- **Report**: NWS surf discussion, Maui north shore height forecast, arrival timing
+- **Emphasize**: This is a priority session. Rearrange schedule.
+- **Equipment**: Switch to wave foil context (Naish Hover Macro Chip, 3'3" 9L board for big surf duck diving)
+- Do NOT suppress other sections — wind matters for wave kiting
+
+### Early Warning (3-10 days out)
+The North Pacific storm monitoring tracks storms from the Gulf of Alaska to the Western Pacific. When a storm system is detected generating significant long-period swell:
+- Flag in the current session report's Watch section even if arrival is 5-7 days out
+- Include in 3-day outlook with 🌊 notation
+- Report the source region, estimated arrival window, and expected height at Pauwela
+- The longer the period, the more reliable the forecast (16s+ swell is very predictable)
+
+### What "CANCEL PLANS" Means in Forecasting
+When reporting a wave event, be direct about it. Example:
+- ✅ "2.5m @ 16s NNW arriving Friday — clear your calendar."
+- ✅ "Gulf of Alaska storm tracking toward Hawaii, expect pumping NW swell by Sunday."
+- ❌ "There may be some increased swell activity"
+- ❌ "Conditions could be favorable for wave riding"
+
 ## Rain Thresholds & Triage Mode
 
 ### Precipitation Tiers
