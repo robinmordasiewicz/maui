@@ -41,6 +41,7 @@ mkdirSync(CACHE_DIR, { recursive: true });
 // ── Cache TTLs (seconds) ─────────────────────────────────────────────
 const TTL = {
   'wind-prediction':    15 * 60,   // 15 min — real-time wind
+  'wind-iktrrm':        60 * 60,   // 1 hour — iK-TRRM premium model forecast
   'isthmus-thermal':    15 * 60,   // 15 min — same Playwright session
   'windswell-analysis': 30 * 60,   // 30 min — NDBC buoys
   'buoy-ndbc':          30 * 60,   // 30 min
@@ -169,6 +170,9 @@ async function main() {
   const windPred = runModule('wind-prediction');
   const thermal = WIND_ONLY ? null : runModule('isthmus-thermal');
 
+  // iK-TRRM premium forecast model (hourly predictions)
+  const iktrrm = runModule('wind-iktrrm', '48');
+
   // NDBC + waves (no auth needed)
   const windswellEnv = windPred?.upwind_analysis?.kanaha_avg
     ? `WIND_SPEED_KTS=${windPred.upwind_analysis.kanaha_avg} WIND_DIR_DEG=${{'N':0,'NNE':22.5,'NE':45,'ENE':67.5,'E':90,'ESE':112.5,'SE':135}[windPred.upwind_analysis.kanaha_dir] || 60}`
@@ -294,6 +298,30 @@ async function main() {
       thermal_pct: t.thermal_fraction,
       phase: t.phase,
     })),
+
+    // iK-TRRM premium model forecast (hourly, same data as iKitesurf website graph)
+    iktrrm_forecast: iktrrm?.forecast ? iktrrm.forecast.map(f => {
+      // time_local is already HST e.g. "2026-03-04 15:00:00-1000"
+      const match = f.time_local.match(/(\d{4}-\d{2}-\d{2}) (\d{2}):00/);
+      const date = match?.[1];
+      const hour = match ? parseInt(match[2]) : null;
+      const ratio = f.wind_speed_kts > 0 ? Math.round((f.wind_gust_kts / f.wind_speed_kts) * 100) / 100 : null;
+      return {
+        date,
+        hour_hst: hour,
+        avg_kts: f.wind_speed_kts,
+        gust_kts: f.wind_gust_kts,
+        dir_deg: f.wind_dir_deg,
+        dir_text: f.wind_dir_text,
+        temp_c: f.temp_c,
+        cloud_pct: f.cloud_cover_pct,
+        humidity_pct: f.humidity_pct,
+        pressure_mb: f.pressure_mb,
+        gust_ratio: ratio,
+      };
+    }).filter(f => f.hour_hst >= 6 && f.hour_hst <= 19) : null,
+
+    iktrrm_current: iktrrm?.current || null,
 
     waves: swellObs ? {
       windswell: `${swellObs.windswell.height_m}m@${swellObs.windswell.period_s}s ${swellObs.windswell.direction}`,
@@ -586,6 +614,24 @@ function printReport(r) {
     for (const t of r.taper) {
       const bar = '█'.repeat(Math.round(t.kts / 2));
       console.log(`  ${String(t.hour).padStart(2)}h  ${t.kts.toFixed(1).padStart(5)}kts  ${bar}`);
+    }
+  }
+
+  // iK-TRRM Forecast
+  if (r.iktrrm_forecast?.length > 0) {
+    console.log(`\n${thin}`);
+    console.log(`  iK-TRRM FORECAST`);
+    let currentDate = '';
+    for (const f of r.iktrrm_forecast) {
+      if (f.date !== currentDate) {
+        currentDate = f.date;
+        console.log(`  ${f.date}`);
+      }
+      const bar = '█'.repeat(Math.round(f.avg_kts / 2));
+      const gustBar = '░'.repeat(Math.max(0, Math.round((f.gust_kts - f.avg_kts) / 2)));
+      const gustLabel = f.gust_kts ? `g${f.gust_kts}` : '';
+      const ratio = f.gust_ratio ? ` (${f.gust_ratio}x)` : '';
+      console.log(`  ${String(f.hour_hst).padStart(2)}h  ${f.avg_kts.toFixed(1).padStart(5)}/${gustLabel.padEnd(5)}  ${bar}${gustBar}${ratio}`);
     }
   }
 
