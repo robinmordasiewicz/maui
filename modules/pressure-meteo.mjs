@@ -31,7 +31,7 @@ async function main() {
     'temperature_2m', 'apparent_temperature', 'dewpoint_2m',
     'relativehumidity_2m',
     'windspeed_10m', 'windgusts_10m', 'winddirection_10m',
-    'cape', 'visibility',
+    'cape', 'visibility', 'weathercode',
   ].join(',');
 
   const daily = [
@@ -84,6 +84,9 @@ async function main() {
       wind_dir_deg: h.winddirection_10m?.[i],
       cape_jkg: h.cape?.[i],
       visibility_m: h.visibility?.[i],
+      weathercode: h.weathercode?.[i],
+      // Derived: shower flag (WMO codes 80-82 = rain showers, 95-99 = thunderstorm)
+      is_shower: [80, 81, 82, 85, 86, 95, 96, 99].includes(h.weathercode?.[i]),
     })),
     daily: (d.time || []).map((t, i) => ({
       date: t,

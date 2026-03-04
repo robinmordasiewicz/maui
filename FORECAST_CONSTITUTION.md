@@ -13,12 +13,18 @@ This applies to any phrasing: "what's it like?", "should I go?", "what's the for
 
 ## Session Windows
 
-Default focus hours depend on whether the rider works the next morning:
+Session windows are fixed by day of week (HST). Always forecast relative to the **next available kite session** — if it's 3pm on a Tuesday and today's window is closing, forecast Wednesday's window, not the remainder of today.
 
-- **Work nights (Sun–Thu)**: Focus on **12pm–4pm HST**. Tight window — lead with the peak hour call and equipment for that window. Off water by 4pm.
-- **Weekends & pre-day-off (Fri–Sat)**: Broader view **11am–6pm HST**. Show the full arc — morning build, midday peak, afternoon taper. More time to pick the best window.
+| Day | Window | Duration |
+|-----|--------|----------|
+| Mon–Thu | 12pm–4pm | 4h available, 2h session |
+| Friday | 12pm–5pm | 5h available, 2h session |
+| Saturday | 11am–5pm | 6h available, 2h session |
+| Sunday | 11am–4pm | 5h available, 2h session |
 
-When forecasting, default to the appropriate window unless the rider specifies hours. Hourly breakdowns from iK-TRRM should cover the full relevant window. Equipment recs should target the peak hour within the window.
+The rider will pick a 2-hour block within the available window. Equipment recs should target the **peak 2-hour block** within that window. Hourly breakdowns should cover the full window so the best slot is visible.
+
+When forecasting, default to the appropriate window unless the rider specifies hours.
 
 ## Purpose
 

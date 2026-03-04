@@ -196,6 +196,7 @@ async function main() {
 
   const tides = WIND_ONLY ? null : runModule('tides-noaa', '3');
   const nws = WIND_ONLY ? null : runModule('forecast-nws');
+  const meteo = WIND_ONLY ? null : runModule('pressure-meteo', '3');
 
   // Equipment recommendations (uses tide data)
   let equipment = null;
@@ -356,6 +357,8 @@ async function main() {
 
     nws: nws?.daily?.slice(0, 2)?.map(p => `${p.name}: ${p.forecast}`) || [],
 
+    precipitation: buildPrecipSummary(nws, meteo),
+
     // ── LLM Context — pre-computed analysis for interpretation ────
     analysis: buildAnalysisContext({
       windAvg, windDir, gustRatio, kanahaGust,
@@ -364,6 +367,7 @@ async function main() {
       swellObs, windswellHt, groundswellHt, swellWarnings,
       taper, synBase, buoys, medUpwind, ua, hour,
       windPred, thermal,
+      precip: buildPrecipSummary(nws, meteo),
     }),
   };
 
@@ -375,10 +379,130 @@ async function main() {
   }
 }
 
+// ── Session window helper ─────────────────────────────────────────────
+// Returns { start, end } in HST hours for the next available session window
+function getSessionWindow() {
+  const now = new Date();
+  const hstStr = now.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', weekday: 'long', hour: 'numeric', hour12: false });
+  const day = now.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', weekday: 'long' });
+  const h = hstHour();
+
+  const windows = {
+    Monday:    { start: 12, end: 16 },
+    Tuesday:   { start: 12, end: 16 },
+    Wednesday: { start: 12, end: 16 },
+    Thursday:  { start: 12, end: 16 },
+    Friday:    { start: 12, end: 17 },
+    Saturday:  { start: 11, end: 17 },
+    Sunday:    { start: 11, end: 16 },
+  };
+
+  const todayWindow = windows[day] || { start: 12, end: 16 };
+
+  // If today's window hasn't closed yet, use today
+  if (h < todayWindow.end) return { ...todayWindow, date: hstDate(), day };
+
+  // Otherwise, advance to next day's window
+  const nextDayMap = { Monday: 'Tuesday', Tuesday: 'Wednesday', Wednesday: 'Thursday',
+    Thursday: 'Friday', Friday: 'Saturday', Saturday: 'Sunday', Sunday: 'Monday' };
+  const nextDay = nextDayMap[day];
+  const nextWindow = windows[nextDay] || { start: 12, end: 16 };
+
+  // Compute next date
+  const nextDate = new Date(now);
+  nextDate.setDate(nextDate.getDate() + 1);
+  const nextDateStr = nextDate.toLocaleString('en-CA', { timeZone: 'Pacific/Honolulu' }).substring(0, 10);
+
+  return { ...nextWindow, date: nextDateStr, day: nextDay };
+}
+
+// ── Precip summary for session window ────────────────────────────────
+function buildPrecipSummary(nws, meteo) {
+  if (!nws && !meteo) return null;
+
+  const win = getSessionWindow();
+  const hours = [];
+  for (let h = win.start; h < win.end; h++) hours.push(h);
+
+  // NWS hourly — times are ISO like "2026-03-04T12:00:00-10:00"
+  const nwsHourly = (nws?.hourly || []).filter(p => {
+    try {
+      const d = new Date(p.time);
+      const hst = d.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', hour: 'numeric', hour12: false });
+      const dateStr = d.toLocaleString('en-CA', { timeZone: 'Pacific/Honolulu' }).substring(0, 10);
+      return dateStr === win.date && hours.includes(parseInt(hst));
+    } catch { return false; }
+  }).map(p => {
+    const d = new Date(p.time);
+    const h = parseInt(d.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', hour: 'numeric', hour12: false }));
+    return { hour_hst: h, pop_pct: p.precip_pct, short_forecast: p.short_forecast };
+  });
+
+  // Open-Meteo hourly — time_hst is "YYYY-MM-DDTHH:00"
+  const meteoHourly = (meteo?.hourly || []).filter(p => {
+    if (!p.time_hst) return false;
+    const [date, time] = p.time_hst.split('T');
+    const h = parseInt(time?.substring(0, 2));
+    return date === win.date && hours.includes(h);
+  }).map(p => {
+    const h = parseInt(p.time_hst.split('T')[1]?.substring(0, 2));
+    return {
+      hour_hst: h,
+      pop_pct: p.precip_probability_pct,
+      precip_mm: p.precipitation_mm,
+      rain_mm: p.rain_mm,
+      showers_mm: p.showers_mm,
+      is_shower: p.is_shower,
+      weathercode: p.weathercode,
+      cloud_pct: p.cloud_cover_pct,
+    };
+  });
+
+  // Merge by hour
+  const merged = hours.map(h => {
+    const n = nwsHourly.find(x => x.hour_hst === h) || {};
+    const m = meteoHourly.find(x => x.hour_hst === h) || {};
+    // Average PoP across sources that have data
+    const pops = [n.pop_pct, m.pop_pct].filter(v => v != null);
+    const avgPop = pops.length ? Math.round(pops.reduce((a, b) => a + b, 0) / pops.length) : null;
+    return {
+      hour_hst: h,
+      nws_pop_pct: n.pop_pct ?? null,
+      meteo_pop_pct: m.pop_pct ?? null,
+      avg_pop_pct: avgPop,
+      precip_mm: m.precip_mm ?? null,
+      rain_mm: m.rain_mm ?? null,
+      showers_mm: m.showers_mm ?? null,
+      is_shower: m.is_shower ?? false,
+      cloud_pct: m.cloud_pct ?? null,
+      nws_short: n.short_forecast ?? null,
+    };
+  });
+
+  // Session-level summary
+  const maxPop = Math.max(...merged.map(h => h.avg_pop_pct ?? 0));
+  const showerHours = merged.filter(h => h.is_shower || (h.avg_pop_pct ?? 0) >= 40);
+  const totalPrecipMm = merged.reduce((s, h) => s + (h.precip_mm ?? 0), 0);
+
+  let risk = 'low';
+  if (maxPop >= 70 || showerHours.length >= 2) risk = 'high';
+  else if (maxPop >= 40 || showerHours.length >= 1) risk = 'moderate';
+
+  return {
+    session_window: `${win.date} ${win.start}:00-${win.end}:00 HST (${win.day})`,
+    rain_risk: risk,
+    max_pop_pct: maxPop,
+    shower_hours: showerHours.map(h => h.hour_hst),
+    total_precip_mm: Math.round(totalPrecipMm * 10) / 10,
+    hourly: merged,
+  };
+}
+
 // ── LLM Analysis Context Builder ─────────────────────────────────────
 // Pre-computes insights, anomalies, correlations, and uncertainties
 // so the LLM can interpret without re-deriving from raw data.
 function buildAnalysisContext(d) {
+  // d.precip passed in from caller
   const ctx = {
     anomalies: [],
     correlations: [],
@@ -428,6 +552,23 @@ function buildAnalysisContext(d) {
       severity: 'significant',
       detail: `Isthmus cooler than ocean by ${Math.abs(d.landSeaDiff)}°C during daytime — unusual. Heavy cloud cover or rain suppressing heating. Thermal wind component absent.`,
     });
+  }
+
+  // Precipitation / shower risk
+  if (d.precip) {
+    if (d.precip.rain_risk === 'high') {
+      ctx.anomalies.push({
+        type: 'rain',
+        severity: 'significant',
+        detail: `High rain risk during session window (${d.precip.max_pop_pct}% PoP, shower hours: ${d.precip.shower_hours.map(h => h + ':00').join(', ')}). Cloud cover will suppress thermal and precip may interrupt session.`,
+      });
+    } else if (d.precip.rain_risk === 'moderate') {
+      ctx.anomalies.push({
+        type: 'rain',
+        severity: 'notable',
+        detail: `Moderate shower risk during session window (${d.precip.max_pop_pct}% PoP${d.precip.shower_hours.length ? ', likely ' + d.precip.shower_hours.map(h => h + ':00').join('/') : ''}). Trade showers typically pass quickly but kill thermal temporarily.`,
+      });
+    }
   }
 
   // Pressure trend anomaly
@@ -667,6 +808,24 @@ function printReport(r) {
   const emoji = { EPIC: '🟢', GOOD: '🟢', FAIR: '🟡', MARGINAL: '🟡', 'NO-GO': '🔴' };
   for (const v of r.activities) {
     console.log(`  ${emoji[v.rating] || '⚪'} ${v.activity}: ${v.rating} (${v.score}/5)${v.notes ? ' — ' + v.notes.trim() : ''}`);
+  }
+
+  // Precipitation
+  if (r.precipitation) {
+    const p = r.precipitation;
+    const riskEmoji = { low: '🟢', moderate: '🟡', high: '🔴' }[p.rain_risk] || '⚪';
+    console.log(`\n${thin}`);
+    console.log(`  PRECIP — ${p.session_window}`);
+    console.log(`  Rain risk: ${riskEmoji} ${p.rain_risk.toUpperCase()} | Max PoP: ${p.max_pop_pct}% | Total: ${p.total_precip_mm}mm`);
+    for (const h of p.hourly) {
+      const showerFlag = h.is_shower ? ' 🌧' : '';
+      const nwsPop = h.nws_pop_pct != null ? `NWS ${h.nws_pop_pct}%` : '';
+      const meteoPop = h.meteo_pop_pct != null ? `OM ${h.meteo_pop_pct}%` : '';
+      const pops = [nwsPop, meteoPop].filter(Boolean).join(' / ');
+      const showers = h.showers_mm ? ` showers:${h.showers_mm}mm` : '';
+      const clouds = h.cloud_pct != null ? ` ☁${h.cloud_pct}%` : '';
+      console.log(`  ${String(h.hour_hst).padStart(2)}:00  ${pops.padEnd(22)}${showers}${clouds}${showerFlag}`);
+    }
   }
 
   // NWS
