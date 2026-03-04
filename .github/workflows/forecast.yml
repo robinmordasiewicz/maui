@@ -36,10 +36,15 @@ jobs:
       - name: Install site dependencies
         run: cd site && npm install
 
-      - name: Generate report
+      - name: Restore iKitesurf session
         env:
-          IK_USER: ${{ secrets.IK_USER }}
-          IK_PASS: ${{ secrets.IK_PASS }}
+          IK_SESSION: ${{ secrets.IK_SESSION }}
+        run: |
+          mkdir -p output/cache
+          echo "$IK_SESSION" | base64 --decode > output/cache/ik-session.json
+          echo "Session restored ($(wc -c < output/cache/ik-session.json) bytes)"
+
+      - name: Generate report
         run: |
           mkdir -p output
           node kanaha-report.mjs --json --no-cache > output/latest.json
