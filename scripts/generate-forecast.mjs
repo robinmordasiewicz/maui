@@ -45,12 +45,26 @@ const report = JSON.parse(reportJson);
 // ── Read CONTEXT.md for domain knowledge ─────────────────────────────
 const context = readFileSync(join(ROOT, 'CONTEXT.md'), 'utf-8');
 
-// ── Date for filename ────────────────────────────────────────────────
+// ── Date + forecast mode ─────────────────────────────────────────────
 const now = new Date();
-const dateHST = now.toLocaleString('en-CA', { timeZone: 'Pacific/Honolulu' }).substring(0, 10);
+const hstHour = parseInt(now.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', hour: 'numeric', hour12: false }));
+const todayHST = now.toLocaleString('en-CA', { timeZone: 'Pacific/Honolulu' }).substring(0, 10);
+
+// After 3pm HST = next-day forecast; before = same-day
+const isNextDay = hstHour >= 15;
+const targetDate = isNextDay ? (() => {
+  const d = new Date(now); d.setDate(d.getDate() + 1);
+  return d.toLocaleString('en-CA', { timeZone: 'Pacific/Honolulu' }).substring(0, 10);
+})() : todayHST;
+
+const forecastType = isNextDay ? 'tomorrow' : 'today';
+const suffix = isNextDay ? '-preview' : '';
+const dateHST = targetDate;
+
 const timeHST = now.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', hour: 'numeric', minute: '2-digit', hour12: true });
-const dayName = now.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', weekday: 'long' });
-const monthDay = now.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', month: 'long', day: 'numeric', year: 'numeric' });
+const targetDateObj = new Date(targetDate + 'T12:00:00-10:00');
+const dayName = targetDateObj.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', weekday: 'long' });
+const monthDay = targetDateObj.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', month: 'long', day: 'numeric', year: 'numeric' });
 
 // ── Build LLM prompt ─────────────────────────────────────────────────
 const systemPrompt = `You are a watersport forecast writer for Kanaha Beach Park, Maui. You write daily forecasts for kite foilboarders, windsurfers, and foilers.
@@ -68,12 +82,15 @@ Your style:
 Domain knowledge:
 ${context}`;
 
-const userPrompt = `Write today's Kanaha forecast blog post based on this data:
+const forecastFraming = isNextDay
+  ? `This is an EVENING PREVIEW forecast for TOMORROW (${dayName}, ${monthDay}), generated at ${timeHST} HST the night before. Current sensor data shows what's happening right now — use it to extrapolate tomorrow's likely conditions. Focus on what to expect, what equipment to prepare, and whether it's worth planning around. Be clear this is a preview and conditions may change overnight.`
+  : `This is a SAME-DAY forecast for TODAY (${dayName}, ${monthDay}), generated at ${timeHST} HST with live sensor data. This should be as accurate as possible — the data is real-time. Be specific about current conditions, what's happening right now, and what the rest of the session window looks like. This is the "should I go NOW?" forecast.`;
+
+const userPrompt = `Write a Kanaha forecast blog post based on this data:
 
 ${JSON.stringify(report, null, 2)}
 
-Date: ${dayName}, ${monthDay}
-Time of report: ${timeHST} HST
+${forecastFraming}
 
 Write the forecast as a blog post. Include:
 1. Overall verdict and best activity
@@ -130,20 +147,21 @@ async function main() {
 
   // Build frontmatter
   const verdict = report.verdict || '🏖️ Kanaha Forecast';
-  const title = `${monthDay} — ${verdict.replace(/[🟢🟡🔴]\s*/, '')}`;
+  const typeLabel = isNextDay ? 'Preview' : 'Live';
+  const title = `${monthDay} ${typeLabel} — ${verdict.replace(/[🟢🟡🔴]\s*/, '')}`;
   const description = report.analysis?.session_advice?.[0] || 'Daily Kanaha watersport forecast';
 
   const post = `---
 title: '${title.replace(/'/g, "''")}'
 description: '${description.replace(/'/g, "''")}'
-pubDate: '${dateHST}'
+pubDate: '${new Date().toISOString()}'
 ---
 
 ${body}
 `;
 
   mkdirSync(BLOG_DIR, { recursive: true });
-  const outPath = join(BLOG_DIR, `${dateHST}.md`);
+  const outPath = join(BLOG_DIR, `${dateHST}${suffix}.md`);
   writeFileSync(outPath, post);
   process.stderr.write(`Written: ${outPath}\n`);
   console.log(outPath);

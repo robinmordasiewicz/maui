@@ -2,9 +2,8 @@ name: Daily Kanaha Forecast
 
 on:
   schedule:
-    # Run twice daily: 7am and noon HST (17:00 and 22:00 UTC)
-    - cron: '0 17 * * *'   # 7am HST — morning preview
-    - cron: '0 22 * * *'   # noon HST — midday update with live data
+    - cron: '0 21 * * *'   # 11am HST — same-day forecast (most accurate, live data)
+    - cron: '0 4 * * *'    # 6pm HST — next-day forecast (planning ahead)
   workflow_dispatch:        # manual trigger
 
 permissions:
