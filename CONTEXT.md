@@ -4,6 +4,10 @@
 
 ---
 
+## Timezone: HST (UTC-10) — ALWAYS
+
+**All times in this system are Hawaii Standard Time.** Your host machine may be in any timezone — ignore it. The report JSON provides `time_hst` and `hour_hst` fields. Use those for all reasoning about current conditions, session windows, thermal state, and forecasts. Never use your system clock for Kanaha analysis.
+
 ## Location: Kanaha Beach Park, North Shore Maui, Hawaii
 
 - GPS: 20.895°N, 156.460°W

@@ -25,6 +25,7 @@ node kanaha-report.mjs --no-cache
 ```
 
 ## Important Rules
+0. **ALL times are HST (UTC-10)**. The report JSON contains `time_hst` and `hour_hst` — use those, never your system clock. Your host machine may be in a different timezone. When reasoning about "now", "today", "tomorrow", always reference the HST time from the report data. Sunrise ~6:30, sunset ~18:15, thermal window 9-17h, session window noon-4pm weekday / noon-5pm weekend — all HST.
 1. **Kanaha sensor (166192) is truth** — never compare raw kts with other stations
 2. **Cloud cover is the #1 forecast uncertainty** — always check and caveat
 3. **Peak wind is 11-14h HST** — evening surges are exceptions
