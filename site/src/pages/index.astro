@@ -10,7 +10,7 @@ const posts = (await getCollection('blog')).sort(
 <Base>
   <div class="space-y-4">
     {posts.length === 0 && (
-      <p class="text-ocean-400 text-center py-12">No forecasts yet. Check back soon.</p>
+      <p class="text-gray-500 dark:text-gray-500 text-center py-16">No forecasts yet. Check back soon.</p>
     )}
     {posts.map((post) => {
       const isPreview = post.data.title.includes('Preview');
@@ -27,17 +27,17 @@ const posts = (await getCollection('blog')).sort(
       });
       return (
         <a href={`/maui/blog/${post.id}/`}
-          class="block bg-ocean-900/50 border border-ocean-800 rounded-lg p-5 hover:border-ocean-600 hover:bg-ocean-900/80 transition group">
+          class="block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 shadow-card hover:shadow-card-hover dark:shadow-card-dark hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-200 group">
           <div class="flex items-center gap-2 mb-2">
             {isPreview ? (
-              <span class="text-xs font-semibold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded">PREVIEW</span>
+              <span class="text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">PREVIEW</span>
             ) : (
-              <span class="text-xs font-semibold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded">LIVE</span>
+              <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">LIVE</span>
             )}
-            <span class="text-ocean-400 text-sm">{dateStr} · {timeStr} HST</span>
+            <span class="text-gray-500 dark:text-gray-500 text-sm">{dateStr} · {timeStr} HST</span>
           </div>
-          <h2 class="text-lg font-semibold text-white group-hover:text-ocean-200 transition">{post.data.title}</h2>
-          <p class="text-sm text-ocean-400 mt-1">{post.data.description}</p>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">{post.data.title}</h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{post.data.description}</p>
         </a>
       );
     })}

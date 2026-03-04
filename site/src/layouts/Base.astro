@@ -9,36 +9,58 @@ const siteTitle = 'Kanaha Wind Report';
 ---
 
 <!doctype html>
-<html lang="en" class="bg-ocean-950 text-gray-100">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/maui/favicon.svg" />
     <title>{title} | {siteTitle}</title>
+    <script is:inline>
+      // Theme toggle — respects system preference, allows manual override
+      (function() {
+        const stored = localStorage.getItem('theme');
+        if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
-  <body class="min-h-screen flex flex-col">
-    <header class="border-b border-ocean-800 bg-ocean-900/80 backdrop-blur sticky top-0 z-10">
-      <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="/maui/" class="flex items-center gap-2 text-xl font-bold text-ocean-300 hover:text-ocean-200 transition">
-          <span class="text-2xl">🏖️</span>
+  <body class="bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <header class="sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+        <a href="/maui/" class="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition">
+          <span class="text-xl">🏖️</span>
           <span>Kanaha Wind Report</span>
         </a>
         <div class="flex items-center gap-4">
-          <a href="/maui/docs/" class="text-sm text-ocean-400 hover:text-ocean-300 transition">Docs</a>
-          <span class="text-sm text-ocean-500">Maui, HI</span>
+          <a href="/maui/docs/" class="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 transition">Docs</a>
+          <button id="theme-toggle" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Toggle theme">
+            <svg class="w-5 h-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <svg class="w-5 h-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+          </button>
         </div>
       </div>
     </header>
 
-    <main class="flex-1 max-w-3xl mx-auto px-4 py-8 w-full">
+    <main class="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-8 w-full">
       <slot />
     </main>
 
-    <footer class="border-t border-ocean-800 text-ocean-500 text-sm">
-      <div class="max-w-3xl mx-auto px-4 py-6 text-center">
-        Automated forecasts from live sensor data · <a href="https://github.com/robinmordasiewicz/maui" class="text-ocean-400 hover:text-ocean-300">Source</a>
+    <footer class="border-t border-gray-200 dark:border-gray-800">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-6 text-center text-sm text-gray-500 dark:text-gray-500">
+        Automated forecasts from live sensor data ·
+        <a href="https://github.com/robinmordasiewicz/maui" class="text-brand-600 dark:text-brand-400 hover:underline">Source</a>
       </div>
     </footer>
+
+    <script is:inline>
+      document.getElementById('theme-toggle').addEventListener('click', function() {
+        const html = document.documentElement;
+        html.classList.toggle('dark');
+        localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+      });
+    </script>
   </body>
 </html>

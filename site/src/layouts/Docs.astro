@@ -10,38 +10,39 @@ const { title, description } = Astro.props;
 ---
 
 <Base title={title} description={description}>
-  <nav class="flex items-center gap-2 text-sm text-ocean-400 mb-8">
-    <a href="/maui/" class="hover:text-ocean-300">Home</a>
+  <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-500 mb-8">
+    <a href="/maui/" class="hover:text-brand-600 dark:hover:text-brand-400 transition">Home</a>
     <span>›</span>
-    <a href="/maui/docs/" class="hover:text-ocean-300">Docs</a>
+    <a href="/maui/docs/" class="hover:text-brand-600 dark:hover:text-brand-400 transition">Docs</a>
     <span>›</span>
-    <span class="text-ocean-300">{title}</span>
+    <span class="text-gray-900 dark:text-gray-200 font-medium">{title}</span>
   </nav>
 
-  <article class="prose prose-invert prose-ocean max-w-none
-    prose-headings:text-ocean-200
-    prose-h1:text-3xl prose-h1:mb-6
-    prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b prose-h2:border-ocean-800 prose-h2:pb-2
-    prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2 prose-h3:text-ocean-300
-    prose-p:text-gray-300 prose-p:leading-relaxed
-    prose-strong:text-white
-    prose-li:text-gray-300
-    prose-a:text-ocean-400 prose-a:no-underline hover:prose-a:text-ocean-300
-    prose-img:rounded-lg prose-img:border prose-img:border-ocean-800
+  <article class="prose dark:prose-invert max-w-none
+    prose-headings:font-semibold
+    prose-h1:text-3xl prose-h1:mb-6 prose-h1:text-gray-900 dark:prose-h1:text-white
+    prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-200 dark:prose-h2:border-gray-800
+    prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-2 prose-h3:text-gray-800 dark:prose-h3:text-gray-200
+    prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed
+    prose-strong:text-gray-900 dark:prose-strong:text-white
+    prose-li:text-gray-700 dark:prose-li:text-gray-300
+    prose-a:text-brand-600 dark:prose-a:text-brand-400 prose-a:no-underline hover:prose-a:underline
+    prose-img:rounded-xl prose-img:shadow-card prose-img:border prose-img:border-gray-200 dark:prose-img:border-gray-800
+    prose-hr:border-gray-200 dark:prose-hr:border-gray-800
     prose-table:border-collapse
-    prose-th:bg-ocean-900 prose-th:text-ocean-200 prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:border prose-th:border-ocean-800
-    prose-td:px-4 prose-td:py-2 prose-td:border prose-td:border-ocean-800
+    prose-th:bg-gray-50 dark:prose-th:bg-gray-900 prose-th:text-gray-700 dark:prose-th:text-gray-300 prose-th:px-4 prose-th:py-2.5 prose-th:text-left prose-th:text-sm prose-th:font-semibold prose-th:border prose-th:border-gray-200 dark:prose-th:border-gray-800
+    prose-td:px-4 prose-td:py-2 prose-td:text-sm prose-td:border prose-td:border-gray-200 dark:prose-td:border-gray-800
   ">
     <slot />
   </article>
 
-  <nav class="mt-12 pt-6 border-t border-ocean-800">
-    <h3 class="text-sm font-semibold text-ocean-400 mb-3">Documentation</h3>
-    <ul class="space-y-1">
-      <li><a href="/maui/docs/equipment/" class="text-ocean-400 hover:text-ocean-300 text-sm">🏄 Equipment Inventory</a></li>
-      <li><a href="/maui/docs/algorithms/" class="text-ocean-400 hover:text-ocean-300 text-sm">⚙️ Prediction Algorithms</a></li>
-      <li><a href="/maui/docs/data-sources/" class="text-ocean-400 hover:text-ocean-300 text-sm">📡 Data Sources & Sensors</a></li>
-      <li><a href="/maui/docs/conditions/" class="text-ocean-400 hover:text-ocean-300 text-sm">🌊 Conditions Guide</a></li>
+  <nav class="mt-12 pt-6 border-t border-gray-200 dark:border-gray-800">
+    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-3">Documentation</h3>
+    <ul class="space-y-2">
+      <li><a href="/maui/docs/equipment/" class="text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 text-sm transition">🏄 Equipment Inventory</a></li>
+      <li><a href="/maui/docs/algorithms/" class="text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 text-sm transition">⚙️ Prediction Algorithms</a></li>
+      <li><a href="/maui/docs/data-sources/" class="text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 text-sm transition">📡 Data Sources & Sensors</a></li>
+      <li><a href="/maui/docs/conditions/" class="text-gray-700 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 text-sm transition">🌊 Conditions Guide</a></li>
     </ul>
   </nav>
 </Base>

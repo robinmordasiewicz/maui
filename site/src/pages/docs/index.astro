@@ -10,17 +10,20 @@ const docs = [
 ---
 
 <Base title="Documentation">
-  <h1 class="text-3xl font-bold text-white mb-2">Documentation</h1>
-  <p class="text-ocean-400 mb-8">How the Kanaha forecast system works — from sensors to equipment recommendations.</p>
+  <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Documentation</h1>
+  <p class="text-gray-600 dark:text-gray-400 mb-8">How the Kanaha forecast system works — from sensors to equipment recommendations.</p>
 
   <div class="space-y-4">
     {docs.map((doc) => (
-      <a href={doc.href} class="block bg-ocean-900/50 border border-ocean-800 rounded-lg p-5 hover:border-ocean-600 hover:bg-ocean-900/80 transition group">
-        <h2 class="text-lg font-semibold text-white group-hover:text-ocean-200 transition">{doc.title}</h2>
-        <p class="text-sm text-ocean-400 mt-1">{doc.desc}</p>
+      <a href={doc.href} class="block bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 shadow-card hover:shadow-card-hover dark:shadow-card-dark hover:border-brand-300 dark:hover:border-brand-700 transition-all duration-200 group">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">{doc.title}</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{doc.desc}</p>
       </a>
     ))}
   </div>
 
-  <a href="/maui/" class="text-ocean-400 hover:text-ocean-300 text-sm mt-8 inline-block">&larr; Back to forecasts</a>
+  <a href="/maui/" class="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 text-sm font-medium mt-8 transition">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+    Back to forecasts
+  </a>
 </Base>
