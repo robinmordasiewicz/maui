@@ -44,6 +44,7 @@ const report = JSON.parse(reportJson);
 
 // ── Read CONTEXT.md for domain knowledge ─────────────────────────────
 const context = readFileSync(join(ROOT, 'CONTEXT.md'), 'utf-8');
+const constitution = readFileSync(join(ROOT, 'FORECAST_CONSTITUTION.md'), 'utf-8');
 
 // ── Date + forecast mode ─────────────────────────────────────────────
 const now = new Date();
@@ -69,17 +70,10 @@ const monthDay = targetDateObj.toLocaleString('en-US', { timeZone: 'Pacific/Hono
 // ── Build LLM prompt ─────────────────────────────────────────────────
 const systemPrompt = `You are a watersport forecast writer for Kanaha Beach Park, Maui. You write daily forecasts for kite foilboarders, windsurfers, and foilers.
 
-Your style:
-- Conversational but informative, like a knowledgeable local sharing the daily report
-- Lead with the verdict — should people go to the beach or not?
-- Focus on actionable information: what equipment to bring, when to go, what to watch for
-- Include specific numbers (wind speed, tide, swell) but make them accessible
-- Mention safety considerations when relevant (reef depth, big swell, gustiness)
-- Keep it concise — 300-500 words
-- Use emojis sparingly for visual scanning (🪁 🌊 🏄 💨 ⚠️)
-- End with a "Bottom Line" one-liner
+FORECAST CONSTITUTION (follow strictly):
+${constitution}
 
-Domain knowledge:
+Domain knowledge (for your reference only — do not explain to readers):
 ${context}`;
 
 const forecastFraming = isNextDay
@@ -92,16 +86,7 @@ ${JSON.stringify(report, null, 2)}
 
 ${forecastFraming}
 
-Write the forecast as a blog post. Include:
-1. Overall verdict and best activity
-2. Wind conditions and prediction through the day
-3. Thermal/regime analysis (what kind of wind day is it?)
-4. Wave conditions (windswell for foiling, any groundswell?)
-5. Equipment recommendation (mast, kite, wings, lines, board)
-6. Session window recommendation (when to go, when to come in)
-7. Any alerts or things to watch for
-
-Output ONLY the markdown body (no frontmatter — I'll add that). Start with an engaging opening line.`;
+Follow the FORECAST CONSTITUTION exactly. Output ONLY the markdown body (no frontmatter). 300 words max.`;
 
 // ── Call Anthropic API ───────────────────────────────────────────────
 function callAnthropic(system, user) {
