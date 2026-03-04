@@ -1,0 +1,42 @@
+---
+import Base from './Base.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+}
+
+const { title, description, pubDate } = Astro.props;
+const dateStr = pubDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Pacific/Honolulu' });
+const isPreview = title.includes('Preview');
+---
+
+<Base title={title} description={description}>
+  <article>
+    <a href="/maui/" class="text-ocean-400 hover:text-ocean-300 text-sm mb-6 inline-block">&larr; All forecasts</a>
+
+    <div class="mb-8">
+      {isPreview && (
+        <span class="inline-block bg-amber-500/20 text-amber-300 text-xs font-semibold px-2 py-1 rounded mb-3">PREVIEW — Next Day</span>
+      )}
+      {!isPreview && (
+        <span class="inline-block bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2 py-1 rounded mb-3">LIVE FORECAST</span>
+      )}
+      <h1 class="text-3xl font-bold text-white mb-2">{title}</h1>
+      <time class="text-ocean-400 text-sm">{dateStr}</time>
+    </div>
+
+    <div class="prose prose-invert prose-ocean max-w-none
+      prose-headings:text-ocean-200
+      prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3 prose-h2:border-b prose-h2:border-ocean-800 prose-h2:pb-2
+      prose-p:text-gray-300 prose-p:leading-relaxed
+      prose-strong:text-white
+      prose-li:text-gray-300
+      prose-a:text-ocean-400 prose-a:no-underline hover:prose-a:text-ocean-300
+      prose-ul:my-2
+    ">
+      <slot />
+    </div>
+  </article>
+</Base>

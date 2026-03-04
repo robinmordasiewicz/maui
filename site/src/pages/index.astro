@@ -1,49 +1,45 @@
 ---
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
-		</main>
-		<Footer />
-	</body>
-</html>
+<Base>
+  <div class="space-y-4">
+    {posts.length === 0 && (
+      <p class="text-ocean-400 text-center py-12">No forecasts yet. Check back soon.</p>
+    )}
+    {posts.map((post) => {
+      const isPreview = post.data.title.includes('Preview');
+      const dateStr = post.data.pubDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'Pacific/Honolulu',
+      });
+      const timeStr = post.data.pubDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: 'Pacific/Honolulu',
+      });
+      return (
+        <a href={`/maui/blog/${post.id}/`}
+          class="block bg-ocean-900/50 border border-ocean-800 rounded-lg p-5 hover:border-ocean-600 hover:bg-ocean-900/80 transition group">
+          <div class="flex items-center gap-2 mb-2">
+            {isPreview ? (
+              <span class="text-xs font-semibold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded">PREVIEW</span>
+            ) : (
+              <span class="text-xs font-semibold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded">LIVE</span>
+            )}
+            <span class="text-ocean-400 text-sm">{dateStr} · {timeStr} HST</span>
+          </div>
+          <h2 class="text-lg font-semibold text-white group-hover:text-ocean-200 transition">{post.data.title}</h2>
+          <p class="text-sm text-ocean-400 mt-1">{post.data.description}</p>
+        </a>
+      );
+    })}
+  </div>
+</Base>
