@@ -138,7 +138,29 @@ Always report both steady and gust: "15kts steady / 20kts gusts (1.33x)". Never 
 - **Forecast trajectory**: How conditions will change through the session window
 - **Wind regime**: What type of day it is (sea breeze, trades, thermal boost)
 - **Wave assessment**: Windswell quality for foiling, groundswell presence
-- **Equipment recommendation**: Specific gear from the equipment matrix — kite size, lines, front wing, tail wing, mast, board
+- **Equipment recommendation**: Specific gear from the equipment matrix below — kite size, lines, front wing, tail wing, mast, board
+
+## Equipment Quiver (use this matrix for all recommendations)
+
+Kites: 5.0m / 4.0m / 3.4m / 2.2m (no 2.8m, no 9m, jump from 3.4m → 2.2m)
+Boards: Armstrong NF Pro 4'2" 19L (freeride) | Naish Hover Macro Chip 3'3" 9L (wave/duck-dive only)
+Front wings: HA1080 (light wind) | HA780 (versatile) | UHA570 (strong wind/speed)
+Tail wings: Glide 220 (default) | Speed 180 (25kts+)
+Masts: 72cm (low tide reef risk) | 85cm (default) | 90cm (high tide) | 100cm (very high tide)
+
+| Wind (steady) | Gust range | Kite | Lines | Front wing | Tail | Board |
+|---|---|---|---|---|---|---|
+| 12–15 kts | 14–18 | 5.0m | 26m | HA1080 | Glide220 | NF Pro 4'2" |
+| 14–17 kts | 16–21 | 4.0m | 25m | HA1080 | Glide220 | NF Pro 4'2" |
+| 15–18 kts | 18–23 | 4.0m | 25m | HA780 | Glide220 | NF Pro 4'2" |
+| 15–20 kts ★ | 18–25 | 3.4m | 24m | HA780 | Glide220 | NF Pro 4'2" |
+| 20–22 kts | 23–27 | 2.2m | 24m | HA780 | Glide220 | NF Pro 4'2" |
+| 22–25 kts | 25–30 | 2.2m | 22m | UHA570 | Glide220 | NF Pro 4'2" |
+| 25–30 kts | 28–35 | 2.2m | 18–20m | UHA570 | Speed180 | NF Pro 4'2" |
+| 30+ kts | 35+ | 2.2m | 16–18m | UHA570 | Speed180 | NF Pro 4'2" |
+| Wave event (1.5m+ groundswell) | any | per wind | per wind | per wind | per wind | Macro Chip 3'3" |
+
+★ Most common Kanaha condition. Size kite/lines to **gust value**. Size front wing to **steady value**.
 - **Session window**: When conditions are best, when they'll deteriorate
 - **Confidence level**: How certain the forecast is, what could change it
 - **Anomalies**: Anything unusual in the data worth noting
