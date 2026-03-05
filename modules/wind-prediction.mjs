@@ -244,6 +244,7 @@ function analyzeUpwindTrend(stations, buoyData) {
       avg_kts: s.avg,
       gust_kts: s.gust,
       dir: s.dir_txt,
+      dir_deg: s.dir ?? null,
       lead_hours: networkEntry?.lead_hours || '1-2',
       // Gust-to-avg ratio indicates steadiness at that station
       gust_ratio: s.gust && s.avg ? Math.round((s.gust / s.avg) * 100) / 100 : null,
@@ -320,6 +321,37 @@ function analyzeUpwindTrend(stations, buoyData) {
       result.far_field_outlook = 'Strong trades at buoy level — wind likely to persist well into evening';
     }
   }
+
+  // Wind shadow detection — learned from 2026-03-04 debrief
+  // When Kanaha direction rotates to due-East (80-100°), the wind comes from behind
+  // the shoreline tree line rather than off the water. This creates an extended wind
+  // shadow projecting offshore — dead zone 500m+ from beach, dramatic wind line,
+  // extreme turbulence and lull-blast cycles. Nearly unrideable near-shore.
+  //
+  // Trigger conditions (all three required):
+  //   1. kanaha_dir > 80° (side-offshore to offshore at north-facing beach)
+  //   2. direction_divergence > 15° (upwind ENE but Kanaha rotated to E — isthmus bending)
+  //   3. gust_ratio > 1.35 (pulsing, not smooth)
+  const kanahaDir = kanaha.dir ?? kanaha.dir_deg;  // 'dir' is the raw degrees field
+  const medUpwindDirs = medUpwind.map(s => s.dir_deg ?? s.dir).filter(d => d != null);
+  const medAvgDir = medUpwindDirs.length > 0
+    ? medUpwindDirs.reduce((a, b) => a + b, 0) / medUpwindDirs.length
+    : null;
+  const dirDivergence = (kanahaDir != null && medAvgDir != null)
+    ? Math.abs(kanahaDir - medAvgDir)
+    : null;
+  const kanahaGustRatioFinal = kanaha.gust && kanaha.avg ? kanaha.gust / kanaha.avg : 1;
+
+  if (kanahaDir > 80 && dirDivergence > 15 && kanahaGustRatioFinal > 1.35) {
+    result.wind_shadow_risk = true;
+    result.wind_shadow_desc = `⚠️ WIND SHADOW RISK: Kanaha wind rotated to ${Math.round(kanahaDir)}° (E) vs upwind ${Math.round(medAvgDir)}°ENE — ${Math.round(dirDivergence)}° isthmus rotation. Wind coming from behind shoreline trees, not off water. Expect extended dead zone 300-700m offshore, dramatic wind line, 10kt+ lull-blast cycles. Conditions very difficult near-shore.`;
+  } else {
+    result.wind_shadow_risk = false;
+    result.wind_shadow_desc = null;
+  }
+  result.kanaha_dir_deg = kanahaDir;
+  result.upwind_dir_deg = medAvgDir ? Math.round(medAvgDir) : null;
+  result.dir_divergence_deg = dirDivergence ? Math.round(dirDivergence) : null;
 
   return result;
 }

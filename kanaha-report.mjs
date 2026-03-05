@@ -50,6 +50,8 @@ const TTL = {
   'forecast-nws':       60 * 60,   // 1 hour
   'three-day-outlook':  60 * 60,   // 1 hour — 3-day session outlook
   'north-pacific-swell': 60 * 60,  // 1 hour — North Pacific storm & swell early warning
+  'swell-surfline':      30 * 60,  // 30 min — Surfline surf height & swell components
+  'alerts-nws':          15 * 60,  // 15 min — NWS active alerts (marine + land)
   'radar-mrms':          5 * 60,   // 5 min — MRMS radar (triggered on rain events)
   'equipment-rec':      30 * 60,   // 30 min — follows tides
   'tides-noaa':         12 * 3600, // 12 hours — predictions stable
@@ -201,7 +203,9 @@ async function main() {
   const nws = WIND_ONLY ? null : runModule('forecast-nws');
   const meteo = WIND_ONLY ? null : runModule('pressure-meteo', '3');
   const outlook = WIND_ONLY ? null : runModule('three-day-outlook');
-  const npSwell = WIND_ONLY ? null : runModule('north-pacific-swell');
+  const npSwell    = WIND_ONLY ? null : runModule('north-pacific-swell');
+  const surfline   = WIND_ONLY ? null : runModule('swell-surfline', '72');
+  const nwsAlerts  = WIND_ONLY ? null : runModule('alerts-nws');
 
   // Radar: only pull when precip warrants it (moderate/heavy/storm)
   const precipCheck = buildPrecipSummary(nws, meteo);
@@ -250,7 +254,16 @@ async function main() {
   const foilRating = windswell?.downwind_foiling?.downwind_foil_rating;
   const swellWarnings = windswell?.groundswell_early_warning || [];
 
-  const alerts = nws?.alerts || [];
+  const alerts = [
+    ...(nwsAlerts?.alerts || []).map(a => ({ event: a.event, headline: a.headline, severity: a.severity, expires: a.expires, areas: a.areas })),
+    ...(nws?.alerts || []).filter(a => !(nwsAlerts?.alerts||[]).some(b => b.event === (a.event||a))),
+  ];
+
+  const windShadowRisk = ua.wind_shadow_risk === true;
+  const windShadowDesc = ua.wind_shadow_desc || null;
+  const kanahaDir_deg = ua.kanaha_dir_deg;
+  const upwindDir_deg = ua.upwind_dir_deg;
+  const dirDivergence = ua.dir_divergence_deg;
   const tideList = tides?.high_low || [];
   const currentTide = tides?.latest_observed;
 
@@ -411,6 +424,31 @@ async function main() {
 
     // Wave event mode — triggered when cancel-plans swell predicted
     wave_event_mode: npSwell?.summary?.cancel_plans_alert === true,
+
+    wind_shadow_risk:  windShadowRisk,
+    wind_shadow_desc:  windShadowDesc,
+    kanaha_dir_deg:    kanahaDir_deg,
+    upwind_dir_deg:    upwindDir_deg,
+    dir_divergence_deg: dirDivergence,
+
+    // Surfline — surf height (ft) + swell components at Ka'a
+    surfline: surfline ? {
+      avg_surf_ft:     surfline.session_summary?.avg_surf_ft,
+      dominant_swells: surfline.session_summary?.dominant_swells,
+      any_wave_event:  surfline.session_summary?.any_wave_event,
+      any_cancel_plans: surfline.session_summary?.any_cancel_plans,
+      forecast:        surfline.forecast,
+    } : null,
+
+    // NWS active alerts (marine + land)
+    nws_alerts: nwsAlerts ? {
+      count:           nwsAlerts.alert_count,
+      has_marine:      nwsAlerts.has_marine_alert,
+      has_small_craft: nwsAlerts.has_small_craft,
+      has_gale:        nwsAlerts.has_gale_warning,
+      has_high_surf:   nwsAlerts.has_high_surf,
+      alerts:          nwsAlerts.alerts,
+    } : null,
 
     radar: radar ? {
       reflectivity_dbz: radar.kanaha?.reflectivity_dbz,
@@ -786,6 +824,11 @@ function printReport(r) {
 
   // Alerts
   for (const a of r.alerts) console.log(`  ⚠️  ${a}`);
+
+  // Wind shadow warning
+  if (r.wind_shadow_risk) {
+    console.log(`\n  🚩 ${r.wind_shadow_desc}`);
+  }
 
   // Wave event banner (positive extreme)
   if (r.wave_event_mode) {

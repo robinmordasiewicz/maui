@@ -16,7 +16,8 @@
 import { loadSession } from './ik-session.mjs';
 
 const SPOT_ID = 166192;
-const MODEL_ID = -7; // iK-TRRM premium model
+const MODEL_ID_TRRM  = -7; // iK-TRRM Tempest Real-time Refresh Model-Station (premium, requires real-time obs)
+const MODEL_ID_BLEND = -1; // BLEND Blended NWP Model (premium fallback, hourly, 241h)
 const HOURS = parseInt(process.argv[2] || '48');
 
 async function main() {
@@ -31,9 +32,9 @@ async function main() {
   process.stderr.write('done\n');
 
   try {
-    // Fetch iK-TRRM premium model forecast
+    // Fetch iK-TRRM premium model forecast — fallback to BLEND if empty
     process.stderr.write('wind-iktrrm: fetching iK-TRRM forecast... ');
-    const data = await page.evaluate(async ({ spotId, modelId, t }) => {
+    const fetchModel = async (modelId) => page.evaluate(async ({ spotId, modelId, t }) => {
       const url =
         `https://api.weatherflow.com/wxengine/rest/model/getModelDataBySpot` +
         `?spot_id=${spotId}&model_id=${modelId}` +
@@ -41,7 +42,9 @@ async function main() {
         `&wf_token=${t}`;
       const r = await fetch(url);
       return r.json();
-    }, { spotId: SPOT_ID, modelId: MODEL_ID, t: token });
+    }, { spotId: SPOT_ID, modelId, t: token });
+
+    let data = await fetchModel(MODEL_ID_TRRM);
 
     if (data.status?.status_code && data.status.status_code !== 0) {
       process.stderr.write(`ERROR: ${JSON.stringify(data.status)}\n`);
@@ -52,8 +55,19 @@ async function main() {
       process.exit(1);
     }
 
-    const modelData = data.model_data || [];
-    process.stderr.write(`done (${modelData.length} hours)\n`);
+    let modelData = data.model_data || [];
+    let usedModel = MODEL_ID_TRRM;
+
+    // iK-TRRM only runs when there are fresh real-time station obs.
+    // If empty, fall back to BLEND which is hourly and premium-class.
+    if (modelData.length === 0) {
+      process.stderr.write(`empty — falling back to BLEND... `);
+      data = await fetchModel(MODEL_ID_BLEND);
+      modelData = data.model_data || [];
+      usedModel = MODEL_ID_BLEND;
+    }
+
+    process.stderr.write(`done (${modelData.length} hours, model=${usedModel})\n`);
 
     // Current observation
     const obsData = await page.evaluate(async ({ spotId, t }) => {
@@ -87,8 +101,9 @@ async function main() {
       source: 'wind-iktrrm',
       location: 'Kanaha, Maui HI',
       spot_id: SPOT_ID,
-      model: data.model_name || 'iK-TRRM',
-      model_id: MODEL_ID,
+      model: data.model_name || (usedModel === MODEL_ID_BLEND ? 'BLEND' : 'iK-TRRM'),
+      model_id: usedModel,
+      model_fallback: usedModel !== MODEL_ID_TRRM,
       timezone: data.tz_name || 'Pacific/Honolulu',
       fetched_utc: new Date().toISOString(),
       units: { wind: 'kts', temp: 'c', pressure: 'mb' },

@@ -1,26 +1,30 @@
 #!/usr/bin/env node
 /**
- * ik-auth.mjs — One-time iKitesurf session authentication
+ * ik-auth.mjs — iKitesurf session capture from live Chrome cookies
  *
- * Logs in via Playwright and saves the full browser session state
- * (cookies + localStorage) to output/cache/ik-session.json.
+ * Instead of logging in (which triggers security alerts and creates a new
+ * session token), this script reads the wfToken directly from Chrome's
+ * cookie database using browser-cookie3 — the exact same session your
+ * browser uses, no new login required.
  *
- * Subsequent API calls in wind-prediction.mjs and wind-iktrrm.mjs
- * RESTORE this session instead of logging in — no new session is created,
- * so iKitesurf sees only one active session per account at all times.
+ * The Chrome token unlocks iK-TRRM premium model data. A fresh login via
+ * Playwright gets a different token that doesn't have iK-TRRM access.
  *
  * When to run:
  *   - First-time setup
- *   - When API calls start returning 401 (session expired)
- *   - Cron at 03:00 HST nightly (user is asleep, no browser conflict)
+ *   - When iK-TRRM returns 0 hours (Chrome session expired/changed)
+ *   - Never triggered automatically — only run manually
+ *
+ * Prerequisites:
+ *   pip3 install browser-cookie3 --break-system-packages
  *
  * Usage:
  *   node scripts/ik-auth.mjs
- *   IK_USER=user@example.com IK_PASS=password node scripts/ik-auth.mjs
  */
 
 import { chromium } from 'playwright';
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs';
+import { writeFileSync, mkdirSync } from 'fs';
+import { execSync } from 'child_process';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -28,13 +32,57 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = join(__dirname, '..', 'output', 'cache');
 const SESSION_PATH = join(CACHE_DIR, 'ik-session.json');
 
-const IK_USER = process.env.IK_USER || 'robin@mordasiewicz.com';
-const IK_PASS = process.env.IK_PASS || 'mum5th3w0rd';
+async function getChromeToken() {
+  // Read wfToken directly from Chrome cookie database
+  const result = execSync(`python3 -c "
+import browser_cookie3
+cookies = browser_cookie3.chrome(domain_name='.ikitesurf.com')
+for c in cookies:
+    if c.name == 'wfToken':
+        print(c.value)
+        break
+"`, { encoding: 'utf-8' }).trim();
+  return result || null;
+}
+
+async function getAllChromeCookies() {
+  const result = execSync(`python3 -c "
+import browser_cookie3, json
+cookies = list(browser_cookie3.chrome(domain_name='.ikitesurf.com'))
+cookies += list(browser_cookie3.chrome(domain_name='wx.ikitesurf.com'))
+out = []
+for c in cookies:
+    out.append({'name': c.name, 'value': c.value, 'domain': c.domain, 'path': c.path or '/', 'secure': bool(c.secure), 'httpOnly': False, 'sameSite': 'Lax', 'expires': int(c.expires) if c.expires else -1})
+print(json.dumps(out))
+"`, { encoding: 'utf-8' }).trim();
+  return JSON.parse(result);
+}
 
 async function main() {
   mkdirSync(CACHE_DIR, { recursive: true });
 
-  console.log('ik-auth: launching browser...');
+  console.log('ik-auth: reading Chrome cookies for ikitesurf.com...');
+  let chromeCookies, chromeToken;
+  try {
+    chromeCookies = await getAllChromeCookies();
+    chromeToken = chromeCookies.find(c => c.name === 'wfToken')?.value;
+  } catch (e) {
+    console.error('ik-auth: ERROR — could not read Chrome cookies:', e.message);
+    console.error('  Make sure Chrome is running and you are logged into ikitesurf.com');
+    console.error('  Also: pip3 install browser-cookie3 --break-system-packages');
+    process.exit(1);
+  }
+
+  if (!chromeToken) {
+    console.error('ik-auth: ERROR — wfToken not found in Chrome cookies.');
+    console.error('  Make sure you are logged into ikitesurf.com in Chrome.');
+    process.exit(1);
+  }
+
+  console.log(`ik-auth: found Chrome wfToken = ${chromeToken.substring(0, 8)}...`);
+
+  // Launch Playwright with Chrome cookies injected
+  console.log('ik-auth: launching browser with Chrome session...');
   const browser = await chromium.launch({
     headless: true,
     args: ['--disable-blink-features=AutomationControlled'],
@@ -44,71 +92,72 @@ async function main() {
     userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.7632.117 Safari/537.36',
   });
 
+  await context.addCookies(chromeCookies);
+
   const page = await context.newPage();
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => false });
   });
 
-  // Login
-  console.log('ik-auth: navigating to login...');
-  await page.goto('https://secure.ikitesurf.com/?app=wx&rd=login', { waitUntil: 'networkidle' });
-  await page.fill('#login-username', IK_USER);
-  await page.fill('#login-password', IK_PASS);
-  await Promise.all([
-    page.waitForNavigation({ waitUntil: 'load', timeout: 20000 }),
-    page.click('input[name="iwok.x"]'),
-  ]);
+  // Navigate to map to activate session
+  console.log('ik-auth: activating session on wx.ikitesurf.com...');
+  await page.goto('https://wx.ikitesurf.com/map', { waitUntil: 'load', timeout: 20000 });
 
-  // Navigate to the map page to fully establish the premium session
-  if (!page.url().includes('wx.ikitesurf.com')) {
-    await page.goto('https://wx.ikitesurf.com/map', { waitUntil: 'load', timeout: 20000 });
-  }
-
-  // Verify we're logged in and have the token
-  const token = await page.evaluate(() => typeof token !== 'undefined' ? token : null);
-  if (!token) {
-    console.error('ik-auth: ERROR — could not extract wf_token. Login may have failed.');
+  const liveToken = await page.evaluate(() => typeof token !== 'undefined' ? token : null);
+  if (!liveToken) {
+    console.error('ik-auth: ERROR — token not found on map page. Chrome session may be expired.');
+    console.error('  Log back into ikitesurf.com in Chrome and re-run.');
     await browser.close();
     process.exit(1);
   }
 
-  // Verify premium data is accessible
-  console.log('ik-auth: verifying premium data access...');
-  const testData = await page.evaluate(async (t) => {
-    const url = `https://api.weatherflow.com/wxengine/rest/spot/getSpotDetailSetByList?spot_list=166192&units_wind=kts&units_temp=c&wf_token=${t}`;
-    const r = await fetch(url);
+  // Verify iK-TRRM access
+  console.log('ik-auth: verifying iK-TRRM access...');
+  const trrmData = await page.evaluate(async (t) => {
+    const r = await fetch(`https://api.weatherflow.com/wxengine/rest/model/getModelDataBySpot?spot_id=166192&model_id=-7&units_wind=kts&units_temp=c&wf_token=${t}`);
     return r.json();
-  }, token);
+  }, liveToken);
 
-  const spot = testData?.spots?.[0];
-  const stations = spot?.stations?.[0];
-  const hasWind = stations?.data_values?.[0]?.[2] != null; // avg field
-
-  if (!hasWind) {
-    const msg = stations?.status_message || 'unknown';
-    console.warn(`ik-auth: WARNING — wind data not available: "${msg}"`);
-    console.warn('ik-auth: Saving session anyway (data may be temporarily unavailable).');
+  const trrmHours = trrmData.model_data?.length ?? 0;
+  if (trrmHours > 0) {
+    console.log(`ik-auth: iK-TRRM verified — ${trrmHours} hours available`);
+    const session = trrmData.model_data.find(f => parseInt((f.model_time_local||'').substring(11,13)) >= 12);
+    if (session) console.log(`ik-auth: first session hour: ${session.model_time_local?.substring(11,16)} avg=${session.wind_speed?.toFixed(1)}kts gust=${session.wind_gust?.toFixed(1)}kts`);
   } else {
-    const avg = stations.data_values[0][2];
-    const gust = stations.data_values[0][4];
-    console.log(`ik-auth: verified — Kanaha reading ${avg}kts avg / ${gust}kts gust`);
+    console.warn(`ik-auth: WARNING — iK-TRRM has 0 hours. Model may not be running (calm conditions or model gap).`);
+    console.warn(`ik-auth: premium: ${trrmData.is_premium} | graphDataExists: ${trrmData.graphDataExists}`);
   }
 
-  // Save complete session state (all cookies + localStorage)
+  // Verify obs access
+  const obsData = await page.evaluate(async (t) => {
+    const r = await fetch(`https://api.weatherflow.com/wxengine/rest/spot/getSpotDetailSetByList?spot_list=166192&units_wind=kts&units_temp=c&wf_token=${t}`);
+    return r.json();
+  }, liveToken);
+  const stations = obsData?.spots?.[0]?.stations?.[0];
+  const vals = stations?.data_values?.[0];
+  const names = obsData?.spots?.[0]?.data_names || [];
+  const avg  = vals?.[names.indexOf('avg')];
+  const gust = vals?.[names.indexOf('gust')];
+  if (avg != null) {
+    console.log(`ik-auth: live obs — Kanaha ${avg}kts avg / ${gust}kts gust`);
+  } else {
+    console.warn(`ik-auth: obs: ${stations?.status_message}`);
+  }
+
+  // Save complete session state
   const state = await context.storageState();
   const sessionData = {
     ...state,
-    wf_token: token,
+    wf_token: liveToken,
     saved_at: new Date().toISOString(),
-    saved_by: 'ik-auth.mjs',
-    account: IK_USER,
+    saved_by: 'ik-auth.mjs (chrome-cookie-import)',
+    source: 'chrome',
   };
 
   writeFileSync(SESSION_PATH, JSON.stringify(sessionData, null, 2));
   console.log(`ik-auth: session saved → ${SESSION_PATH}`);
-  console.log(`ik-auth: wf_token = ${token.substring(0, 8)}...`);
+  console.log(`ik-auth: wf_token = ${liveToken.substring(0, 8)}...`);
 
-  // Print cookie expiry info
   const wfCookie = state.cookies?.find(c => c.name === 'wfToken');
   if (wfCookie?.expires) {
     const exp = new Date(wfCookie.expires * 1000);
@@ -116,10 +165,10 @@ async function main() {
   }
 
   await browser.close();
-  console.log('ik-auth: done. Playwright session closed.');
+  console.log('ik-auth: done.');
   console.log('');
-  console.log('All subsequent API calls will reuse this session without logging in.');
-  console.log('Re-run this script if wind-prediction or wind-iktrrm return 401 errors.');
+  console.log('Session imported from Chrome. No login was performed.');
+  console.log('Re-run when iK-TRRM stops returning data (Chrome session changed).');
 }
 
 main().catch(err => {
