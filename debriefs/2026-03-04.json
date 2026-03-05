@@ -1,0 +1,95 @@
+{
+  "date": "2026-03-04",
+  "session_window": "12:00-16:00 HST",
+  "session_type": "kite_foil",
+
+  "forecast": {
+    "verdict": "GOOD",
+    "predicted_avg_kts": 17.5,
+    "predicted_gust_kts": 24.5,
+    "predicted_dir": "ENE",
+    "predicted_dir_deg": 67,
+    "predicted_gust_ratio": 1.40,
+    "predicted_regime": "active_trades",
+    "wind_shadow_risk": false,
+    "predicted_surf_ft": 2.5,
+    "predicted_swell_dir": "ENE",
+    "predicted_swell_period_s": 7,
+    "equipment_rec": "3.4m, 24m, HA780, Glide220",
+    "alerts": ["Small Craft Advisory — Maui Windward Waters until 2026-03-05 06:00 HST"]
+  },
+
+  "actual": {
+    "avg_kts_range": "15-25",
+    "gust_kts_peak": 28,
+    "dir_deg": 88,
+    "dir_text": "E",
+    "gust_ratio_experienced": 1.67,
+    "surf_ft": "2-3",
+    "swell_character": "short choppy ENE windswell + small NNW groundswell",
+    "wind_shadow_present": true,
+    "wind_shadow_extent_m": 500,
+    "wind_line_present": true,
+    "near_shore_quality": "poor",
+    "open_water_quality": "fair",
+    "launch_difficulty": "body_drag_required"
+  },
+
+  "equipment_used": {
+    "kite": "3.4m",
+    "lines": "24m",
+    "front_wing": "HA780",
+    "tail_wing": "Glide220",
+    "mast_cm": 85,
+    "board": "NF Pro 4'2\""
+  },
+
+  "verdict": {
+    "forecast_accuracy": "missed_hazard",
+    "session_quality": 2,
+    "session_quality_desc": "Got on water but conditions were very difficult — extreme near-shore turbulence, required 500m body drag to launch",
+    "would_go_again": false,
+    "equipment_correct": true,
+    "equipment_notes": "3.4m was correct size for open water but gust ratio made it difficult to handle"
+  },
+
+  "observations": {
+    "free_text": "Wind direction was effectively side-offshore creating a massive wind shadow from shoreline trees. Even 1km offshore the conditions were extremely gusty and turbulent ranging 15-25kts. Dramatic wind line extending very far offshore — nearly impossible to keep kite flying inside the shadow. Body dragged 500m offshore before finding launchable conditions. Gusts made kite control very difficult even in open water.",
+    "anomalies": [
+      "wind shadow extended 500m+ offshore from shoreline trees",
+      "dramatic hard wind line far from shore",
+      "10kt lull-blast cycles even 500m offshore",
+      "side-offshore angle made normal beach launch impossible"
+    ],
+    "new_patterns": [
+      "isthmus venturi rotation: upwind ENE (62°) → Kanaha E (88°) = 26° southward bend",
+      "due-E wind at Kanaha = behind tree line, shadow projects northwest offshore",
+      "sensor reads 19.6kts GOOD but near-shore is unrideable — sensors are in open air above shadow"
+    ]
+  },
+
+  "sensor_actuals": {
+    "kanaha_avg": 19.6,
+    "kanaha_gust": 28.4,
+    "kanaha_dir_deg": 88,
+    "upwind_dir_deg": 62,
+    "dir_divergence_deg": 26,
+    "isthmus_temp_c": 24.1,
+    "ocean_temp_c": 24.2,
+    "thermal_delta_c": 1.9,
+    "hansen_rd_avg": 13.0,
+    "hansen_rd_dir_deg": 63,
+    "upolu_avg": 9.6,
+    "upolu_dir_deg": 88
+  },
+
+  "detection_outcome": {
+    "wind_shadow_algorithm_would_have_fired": true,
+    "trigger_variables": {
+      "kanaha_dir_gt_80": true,
+      "dir_divergence_gt_15": true,
+      "gust_ratio_gt_135": true
+    },
+    "note": "Algorithm built and committed after this debrief. Would have correctly flagged this session."
+  }
+}
