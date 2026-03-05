@@ -217,18 +217,93 @@ Masts: 72cm (low tide reef risk) | 85cm (default) | 90cm (high tide) | 100cm (ve
 - **Confident when data supports it, honest when it doesn't**: State uncertainty clearly but don't hedge everything
 - **No filler**: Every sentence should contain information. If removing a sentence loses nothing, remove it.
 
-## Structure
+## Forecast Reply Template
 
-1. **One-line verdict** — go/no-go and best activity
-2. **Wind** — current, trend, regime, thermal state
-3. **Waves** — windswell quality, groundswell presence
-4. **Equipment** — specific gear recommendation
-5. **Session window** — when to go, when to come in
-6. **Watch** — anything that could change the picture (optional, only if relevant)
+Every forecast reply MUST follow this exact structure and field order. No sections may be skipped except ALERTS (omit if none) and WATCH (omit if nothing noteworthy). All values must come from the data — never invent or approximate.
+
+---
+
+```
+📅 [DAY, DATE] — [SESSION WINDOW] HST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚨 ALERTS (omit section if none)
+[event] — [areas] — expires [time]
+
+🚩 WIND SHADOW (omit section if wind_shadow_risk = false)
+Kanaha [X]° vs upwind [Y]° — [Z]° isthmus rotation. [one-line impact]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VERDICT: [GO / MARGINAL / NO-GO] — [one-line reason]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WIND
+  Now:      [avg]kts [dir] / gust [gust]kts ([ratio]x)
+  Regime:   [regime description — one line]
+  Thermal:  Δ[land-sea diff]°C → [strength] | Cloud: [low-layer %]% low / [total]% total
+  
+  iK-TRRM session window:
+  [HH]:00   [avg]kts / g[gust]kts   [dir]   cloud [%]%
+  [HH]:00   [avg]kts / g[gust]kts   [dir]   cloud [%]%
+  [HH]:00   [avg]kts / g[gust]kts   [dir]   cloud [%]%
+  [HH]:00   [avg]kts / g[gust]kts   [dir]   cloud [%]%
+  [HH]:00   [avg]kts / g[gust]kts   [dir]   cloud [%]%  ← (include all session hours)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WAVES
+  Windswell:    [height]m @ [period]s [dir]
+  Groundswell:  [height]m @ [period]s [dir]   ← omit if flat
+  Surfline:     [min]-[max]ft ([label])
+  Foil rating:  [EPIC / GOOD / FAIR / POOR]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GEAR
+  Kite:   [size]m   Lines: [length]m
+  Wing:   [model]   Tail:  [model]
+  Mast:   [length]cm   Board: [board]
+  Tide during session: [low]-[high]ft
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3-DAY
+  [Day 1 DATE]  [verdict emoji]  [avg]kts  [rain icon]  [swell icon]
+  [Day 2 DATE]  [verdict emoji]  [avg]kts  [rain icon]  [swell icon]
+  [Day 3 DATE]  [verdict emoji]  [avg]kts  [rain icon]  [swell icon]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WATCH (omit if nothing noteworthy)
+[one line per item — swell arrivals, pressure changes, model disagreements, cloud trend]
+```
+
+---
+
+### Template Field Rules
+
+**VERDICT emojis**: 🟢 GO | 🟡 MARGINAL | 🔴 NO-GO
+
+**3-DAY emojis**:
+- Verdict: 🟢 GO | 🟡 MARGINAL | 🔴 NO-GO
+- Rain: 🌧 moderate+ | 🌦 scattered | (blank) dry
+- Swell: 🌊 wave event | (blank) normal
+
+**THERMAL strength labels**: none | weak | moderate | strong | very strong
+
+**Cloud cover**: always report LOW layer % separately from total. Low cloud is what suppresses thermal.
+
+**iK-TRRM rows**: include every hour of the session window. If iK-TRRM unavailable, note "iK-TRRM unavailable — BLEND model" and use BLEND data.
+
+**GEAR**: always specific model names from the quiver. Never "a larger kite" — always "4.0m".
+
+**WATCH items that always warrant inclusion**:
+- wind_shadow_risk = true (even if already in banner)
+- Any NWS alert not already in ALERTS
+- Groundswell arrival within 48h
+- iK-TRRM / NWS direction disagreement > 20°
+- Cloud forecast >60% with thermal-dependent conditions
+- Pressure trend > ±2hPa/3h
 
 ## Word Limit
 
-300 words maximum. Shorter is better. A 150-word forecast that covers everything is better than a 300-word one with padding.
+300 words maximum for the analysis/narrative. The template table rows don't count toward the word limit.
 
 ## Examples of BAD forecast lines (never write these)
 
