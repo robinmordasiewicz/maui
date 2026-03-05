@@ -109,6 +109,25 @@ Every forecast includes a 3-day session window outlook. Format:
 - If any day is triage-level rain, flag it in the current session report as an early warning even if today is rideable
 - "Storm on the horizon" warnings belong in the Watch section
 
+## Cloud Cover Correlation at Kanaha
+
+**Learned from 2026-03-04 session debrief.** Cloud cover directly controls thermal drive, which in turn determines whether trade wind lulls are filled or persist.
+
+| Cloud Cover | Thermal Drive | Effect at Kanaha |
+|-------------|--------------|-----------------|
+| < 30% | Full | Solar heats isthmus strongly. Thermal fills lulls. Shadow zones mix out. Best conditions. |
+| 30–60% | Moderate | Partial thermal boost. Some shadow persistence. Normal variability. |
+| 60–80% | Suppressed | Minimal thermal. Shadow zones persist longer. Synoptic base exposed in lulls. |
+| > 80% | Off | No thermal. Maximum shadow persistence. Wind character purely synoptic — gusty, pulsing, no recovery in lulls. |
+
+**Cloud type matters**: Low cloud (trade wind cumulus, 0–2km) is most suppressive — it blocks direct solar radiation to the isthmus surface. Mid/high cloud has less effect on surface heating.
+
+**Compounding hazard**: When heavy low cloud (> 70%) combines with side-offshore wind direction (> 80°), the effect doubles: no thermal to mix through the shadow zone, AND the shadow itself is larger. Dead zones extend further and last longer.
+
+**iK-TRRM cloud forecast accuracy**: Model tends to underestimate cloud cover during active trade wind periods with Small Craft Advisory conditions. Observed 2026-03-04: predicted 44%, actual 75–92%. When SCA is active, add 20–30% to iK-TRRM cloud forecast.
+
+**When reporting cloud cover**: Always distinguish low cloud from mid/high. `cloud_cover_low > 60%` is the relevant suppression signal — not total cloud cover.
+
 ## Wind Shadow Risk at Kanaha
 
 **Learned from 2026-03-04 session debrief.** When all three conditions occur simultaneously, near-shore conditions become very difficult despite wind sensors showing "good" numbers:
