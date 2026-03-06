@@ -1,0 +1,90 @@
+{
+  "date": "2026-03-05",
+  "session_window": "12:00-16:00 HST",
+  "session_type": "kite_foil",
+
+  "forecast": {
+    "verdict": "NO-GO",
+    "predicted_avg_kts": 12,
+    "predicted_gust_kts": 20,
+    "predicted_dir": "E",
+    "predicted_dir_deg": 179,
+    "predicted_gust_ratio": 1.55,
+    "predicted_regime": "synoptic_blocked",
+    "wind_shadow_risk": true,
+    "wind_shadow_extent_predicted_m": 500,
+    "predicted_surf_ft": "1-3",
+    "predicted_swell_dir": "ENE",
+    "predicted_swell_period_s": 9.1,
+    "equipment_rec": "N/A (no-go) — contingency 4.0m 25m HA1080 Glide220 85cm",
+    "alerts": ["Small Craft Advisory — Maui waters — expires Fri Mar 6 6:00pm HST"]
+  },
+
+  "actual": {
+    "avg_kts_range": "unknown — powered on 3.4m once past wind line",
+    "gust_kts_peak": null,
+    "dir_deg": 179,
+    "dir_text": "E",
+    "gust_ratio_experienced": null,
+    "surf_ft": null,
+    "swell_character": "clean E windswell — roller type, gliding style, surprisingly good quality",
+    "wind_shadow_present": true,
+    "wind_shadow_extent_m": 300,
+    "wind_line_present": true,
+    "near_shore_quality": "poor",
+    "open_water_quality": "good",
+    "launch_difficulty": "body_drag_required"
+  },
+
+  "equipment_used": {
+    "kite": "3.4m",
+    "lines": "22m",
+    "front_wing": null,
+    "tail_wing": null,
+    "mast_cm": 85,
+    "board": "NF Pro 4'2\""
+  },
+
+  "verdict": {
+    "forecast_accuracy": "under_forecast",
+    "session_quality": 5,
+    "session_quality_desc": "Good — perfectly powered once past wind line, clean water state, enjoyable riding",
+    "would_go_again": true,
+    "equipment_correct": true,
+    "equipment_notes": "3.4m + 22m was correct for open water conditions past the wind line. Forecast contingency recommendation of 4.0m/25m was too big."
+  },
+
+  "observations": {
+    "free_text": "Despite NO-GO verdict, session was actually very good. Wind shadow was real — required 300m body drag to reach the wind line. Once past the wind line, kite launched cleanly and conditions were solid. 3.4m was perfectly powered. E-direction windswell was clean and produced good roller-type waves, well-suited to gliding foil style. Easterly direction, while creating a near-shore shadow problem, did NOT ruin the session — the open water past the wind line was quality riding. Key insight: wind shadow = access problem, not a wind quality problem. Once past it, the wind was good.",
+    "anomalies": [
+      "Wind shadow extent only 300m (forecast estimated 500m) — less severe than predicted",
+      "E-direction windswell unexpectedly clean and rideable — better wave riding than typical NE chop",
+      "Perfectly powered on 3.4m past wind line — implies steady 18-22kts in open water"
+    ],
+    "new_patterns": [
+      "E-direction wind shadow = access problem only. Open water conditions beyond wind line can be excellent.",
+      "E-direction windswell (ENE 9s) = clean rollers suitable for glide-style foil riding",
+      "Body drag 300m is manageable for experienced rider — should not auto-cancel session",
+      "Wind shadow extent 300m (not always 500-700m) — severity varies",
+      "3.4m + 22m = correct kit when iK-TRRM shows 13-15kts open water in E conditions"
+    ]
+  },
+
+  "sensor_actuals": {
+    "kanaha_avg": 2.1,
+    "kanaha_gust": 3.2,
+    "kanaha_dir_deg": 179,
+    "upwind_dir_deg": 105,
+    "dir_divergence_deg": 74,
+    "isthmus_temp_c": 20,
+    "ocean_temp_c": 24.1,
+    "thermal_delta_c": -4.1
+  },
+
+  "calibration_notes": {
+    "verdict_correction": "NO-GO was too conservative. Correct verdict for experienced rider: MARGINAL with explicit wind-shadow access warning. Wind shadow = launch challenge, not session cancellation.",
+    "equipment_correction": "Contingency gear should have been 3.4m + 22m, not 4.0m + 25m. iK-TRRM 13-15kts open water + E direction + SCA = 3.4m range.",
+    "wave_quality_correction": "E-direction windswell (ENE 8-10s) should not default to POOR foil rating. Clean rollers at this period are FAIR-to-GOOD for glide-style foil riding.",
+    "shadow_extent_correction": "Wind shadow extent prediction of 500-700m was overstated. Actual was 300m. May be proportional to wind speed — lighter trades = smaller shadow."
+  }
+}

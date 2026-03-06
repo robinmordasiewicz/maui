@@ -130,7 +130,28 @@ Every forecast includes a 3-day session window outlook. Format:
 
 ## Wind Shadow Risk at Kanaha
 
-**Learned from 2026-03-04 session debrief.** When all three conditions occur simultaneously, near-shore conditions become very difficult despite wind sensors showing "good" numbers:
+**Learned from 2026-03-04 and 2026-03-05 session debriefs.**
+
+### Critical Distinction: Access Problem vs Session Quality Problem
+
+**Wind shadow = launch access challenge, NOT automatic session cancellation.**
+
+Debrief 2026-03-05 confirmed: Robin body-dragged 300m offshore past the wind line and had a **session quality 5/6 (Good)** day. 3.4m was perfectly powered in open water. E-direction windswell was clean and produced quality roller-type waves for glide-style foil riding.
+
+**The correct verdict when wind_shadow_risk = true for an experienced rider:**
+- `🟡 MARGINAL` with explicit launch warning — not `🔴 NO-GO`
+- Exception: Only `🔴 NO-GO` if wind in open water is also insufficient (< 12kts iK-TRRM) OR rain triage
+
+**Wind shadow extent**: Not always 500-700m. Observed 300m on 2026-03-05 (lighter trades). Extent appears proportional to trade wind strength — lighter synoptic base = smaller shadow.
+
+### E-Direction Windswell Quality (Calibration Update)
+
+E-direction windswell (ENE, 8-10s period) produces **clean rollers** suitable for glide-style foil riding. Do NOT default to POOR for E-direction swell. Correct rating:
+- ENE windswell 8-10s = **FAIR** foil rating (clean rollers, glide style)
+- ENE windswell < 7s = POOR (too short period, choppy)
+- ENE windswell > 10s = GOOD (longer period = better shape)
+
+### When all three conditions occur simultaneously, near-shore conditions become very difficult despite wind sensors showing "good" numbers:
 
 1. `kanaha_dir_deg > 80°` — wind is due-East or ESE rather than NE/ENE. At Kanaha (north-facing beach), this means wind comes from behind the shoreline tree line rather than off the water.
 2. `dir_divergence_deg > 15°` — isthmus venturi is rotating the wind direction southward (upwind stations show ENE but Kanaha shows E). This rotation is the isthmus bending the trades.
@@ -140,9 +161,11 @@ Every forecast includes a 3-day session window outlook. Format:
 
 **When `wind_shadow_risk: true`**:
 - Lead with: 🚩 WIND SHADOW WARNING before the verdict
-- Explain: wind direction rotated to E (X°), shadow from shoreline trees extends far offshore
-- Adjust verdict downward — "GOOD" numbers on sensors ≠ good rideable conditions
-- Recommend launching from the water if possible, or waiting for direction to back to NE
+- Explain: wind direction rotated to E (X°), shadow from shoreline trees extends ~300-700m offshore
+- **Set verdict to 🟡 MARGINAL** (not NO-GO) — open water beyond the wind line is rideable
+- State clearly: "body drag ~300m required to reach wind line"
+- Equipment: size to iK-TRRM open-water wind value, NOT to sensor reading at beach
+- If iK-TRRM shows 13-15kts open water in E/SCA conditions → 3.4m + 22m is correct kit
 
 ## Purpose
 
