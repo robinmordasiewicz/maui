@@ -1,0 +1,100 @@
+{
+  "date": "2026-03-06",
+  "session_window": "11:00-17:00 HST",
+  "session_type": "kite_foil",
+
+  "forecast": {
+    "verdict": "TBD — see calibration notes",
+    "predicted_avg_kts": null,
+    "predicted_gust_kts": null,
+    "predicted_dir": "E",
+    "predicted_dir_deg": 179,
+    "predicted_gust_ratio": null,
+    "predicted_regime": "synoptic_easterly",
+    "wind_shadow_risk": true,
+    "wind_shadow_extent_predicted_m": null,
+    "predicted_surf_ft": null,
+    "predicted_swell_dir": "ENE",
+    "predicted_swell_period_s": null,
+    "equipment_rec": "TBD",
+    "alerts": []
+  },
+
+  "actual": {
+    "avg_kts_range": "similar to 2026-03-05 — powered on 3.4m in open water",
+    "gust_kts_peak": null,
+    "dir_deg": 179,
+    "dir_text": "E",
+    "gust_ratio_experienced": null,
+    "surf_ft": null,
+    "swell_character": "wind swell only — no ground swell — very very good wind swell quality",
+    "ground_swell_present": false,
+    "wind_swell_present": true,
+    "wind_swell_quality": "very_good",
+    "wind_shadow_present": true,
+    "wind_line_present": true,
+    "near_shore_quality": "poor",
+    "open_water_quality": "very_good",
+    "launch_difficulty": "body_drag_required"
+  },
+
+  "equipment_used": {
+    "kite": "3.4m",
+    "lines": "22m",
+    "front_wing": null,
+    "tail_wing": null,
+    "mast_cm": 85,
+    "board": "NF Pro 4'2\""
+  },
+
+  "verdict": {
+    "forecast_accuracy": "conditions_matched_march05",
+    "session_quality": 6,
+    "session_quality_desc": "Great — strong wind swell, well-powered open water, excellent kite foil day",
+    "would_go_again": true,
+    "equipment_correct": true,
+    "equipment_notes": "Same kit as March 5 — 3.4m + 22m correct for E-direction open water."
+  },
+
+  "observations": {
+    "free_text": "Conditions nearly identical to 2026-03-05. E-direction wind shadow present near shore — body drag required to launch. No ground swell today (unlike some previous sessions), but the wind swell was very very good — stronger and cleaner than expected. Once past the wind line, kite foiling was excellent. Wind swell only sessions in E conditions are proving to be underrated — the ENE wind swell at this period produces clean, consistent rollers that suit glide-style foil riding well. Second consecutive good open-water session despite near-shore access challenge. Pattern is solidifying: E-direction = wind shadow access challenge + clean wind swell beyond wind line.",
+    "anomalies": [
+      "Zero ground swell — wind swell only, yet session quality was very high",
+      "Wind swell quality 'very very good' — stronger than March 5 equivalent",
+      "Consecutive E-direction days both producing quality open-water sessions"
+    ],
+    "new_patterns": [
+      "Wind swell alone (no ground swell) in E conditions can produce 'great day' kite foil quality",
+      "E-direction consecutive days: pattern repeats reliably — wind shadow + great open water",
+      "Wind-swell-only sessions should NOT be downgraded — can be excellent for kite foil",
+      "March 5-6 pattern: synoptic E-direction trade wind = wind shadow near-shore + quality wind swell offshore"
+    ]
+  },
+
+  "sensor_actuals": {
+    "kanaha_avg": null,
+    "kanaha_gust": null,
+    "kanaha_dir_deg": 179,
+    "upwind_dir_deg": null,
+    "dir_divergence_deg": null,
+    "isthmus_temp_c": null,
+    "ocean_temp_c": null,
+    "thermal_delta_c": null
+  },
+
+  "calibration_notes": {
+    "verdict_correction": "Second consecutive confirmation: E-direction conditions should NOT auto-trigger NO-GO or MARGINAL. Correct call for experienced rider: GO with explicit wind-shadow access warning.",
+    "wave_quality_correction": "Wind-swell-only in E conditions = GOOD to VERY GOOD for kite foil. Ground swell not required for quality session. Remove ground-swell requirement from kite foil wave quality scoring.",
+    "shadow_extent_correction": "Wind shadow extent consistent — body drag required, but manageable. Not a cancellation condition.",
+    "pattern_reinforcement": "March 5 + March 6 are matching debriefs. E-direction synoptic easterly = repeatable pattern: (1) near-shore wind shadow, (2) body drag required, (3) excellent open-water wind swell, (4) 3.4m + 22m correct equipment. Confidence in this pattern is now HIGH."
+  },
+
+  "prior_debrief_comparison": {
+    "matches_date": "2026-03-05",
+    "similarity": "near_identical",
+    "differences": [
+      "No ground swell today vs trace ENE ground swell on March 5",
+      "Wind swell quality rated 'very very good' today — possibly slightly better than March 5"
+    ]
+  }
+}

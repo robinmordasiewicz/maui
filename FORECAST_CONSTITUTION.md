@@ -136,20 +136,28 @@ Every forecast includes a 3-day session window outlook. Format:
 
 **Wind shadow = launch access challenge, NOT automatic session cancellation.**
 
-Debrief 2026-03-05 confirmed: Robin body-dragged 300m offshore past the wind line and had a **session quality 5/6 (Good)** day. 3.4m was perfectly powered in open water. E-direction windswell was clean and produced quality roller-type waves for glide-style foil riding.
+**TWO CONSECUTIVE DAYS CONFIRMED (2026-03-05 + 2026-03-06) — HIGH CONFIDENCE PATTERN:**
+
+- 2026-03-05: body-dragged 300m, session quality **5/6 (Good)**, 3.4m perfectly powered in open water, ENE windswell clean
+- 2026-03-06: near-identical conditions, **zero ground swell**, wind swell ONLY — rated **"very very good"**, session quality **6/6 (Great)** for kite foiling
+
+This is no longer a one-off. E-direction synoptic trade days = reliable pattern. Confidence level: **HIGH**.
 
 **The correct verdict when wind_shadow_risk = true for an experienced rider:**
 - `🟡 MARGINAL` with explicit launch warning — not `🔴 NO-GO`
 - Exception: Only `🔴 NO-GO` if wind in open water is also insufficient (< 12kts iK-TRRM) OR rain triage
 
-**Wind shadow extent**: Not always 500-700m. Observed 300m on 2026-03-05 (lighter trades). Extent appears proportional to trade wind strength — lighter synoptic base = smaller shadow.
+**Wind shadow extent**: Not always 500-700m. Observed ~300m on both March 5 and 6 (lighter trade base). Extent appears proportional to trade wind strength — lighter synoptic base = smaller shadow.
 
-### E-Direction Windswell Quality (Calibration Update)
+### E-Direction Windswell Quality (Calibration Update — CONFIRMED HIGH CONFIDENCE)
 
-E-direction windswell (ENE, 8-10s period) produces **clean rollers** suitable for glide-style foil riding. Do NOT default to POOR for E-direction swell. Correct rating:
-- ENE windswell 8-10s = **FAIR** foil rating (clean rollers, glide style)
-- ENE windswell < 7s = POOR (too short period, choppy)
-- ENE windswell > 10s = GOOD (longer period = better shape)
+E-direction wind swell produces **clean rollers** suitable for glide-style foil riding. Ground swell is NOT required for a quality kite foil session in E conditions.
+
+- ENE wind swell only (no ground swell) = **GOOD** kite foil rating — confirmed 2026-03-06
+- ENE wind swell 8-10s = **FAIR-to-GOOD** foil rating (clean rollers, glide style)
+- ENE wind swell < 7s = POOR (too short period, choppy)
+- ENE wind swell > 10s = GOOD (longer period = better shape)
+- **Do NOT downgrade session forecast for lack of ground swell in E-direction conditions**
 
 ### When all three conditions occur simultaneously, near-shore conditions become very difficult despite wind sensors showing "good" numbers:
 
