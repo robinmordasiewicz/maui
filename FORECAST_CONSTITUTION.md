@@ -2,6 +2,23 @@
 
 > Rules governing what the AI forecast writer includes and excludes. This is loaded as part of the system prompt for every forecast generation.
 
+## Units (mandatory — never deviate)
+
+| Measurement | Unit |
+|---|---|
+| Wind speed | **knots (kts)** — never mph, never m/s |
+| Temperature | **°C** — never °F |
+| Distance / depth / height | **metres (m)** — never feet |
+| Precipitation / rainfall | **mm** — never inches |
+| Tide height | **m** — never feet |
+| Wave height | **m** — never feet |
+| Visibility | **km** — never miles |
+| Mast / line length | **cm / m** (already metric — keep as-is) |
+
+These are absolute. If a source reports in imperial (NWS mph, NDBC feet, Surfline ft), convert before reporting to the rider.
+
+---
+
 ## Temporal Context
 
 **Always answer in terms of the next available session window — never current conditions.**
@@ -284,7 +301,7 @@ WIND
 WAVES
   Windswell:    [height]m @ [period]s [dir]
   Groundswell:  [height]m @ [period]s [dir]   ← omit if flat
-  Surfline:     [min]-[max]ft ([label])
+  Surfline:     [min]-[max]m ([label])
   Foil rating:  [EPIC / GOOD / FAIR / POOR]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -292,7 +309,7 @@ GEAR
   Kite:   [size]m   Lines: [length]m
   Wing:   [model]   Tail:  [model]
   Mast:   [length]cm   Board: [board]
-  Tide during session: [low]-[high]ft
+  Tide during session: [low]-[high]m
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 3-DAY
@@ -348,7 +365,7 @@ WATCH (omit if nothing noteworthy)
 
 ## Examples of GOOD forecast lines
 
-- "18kts NE, gust ratio 1.2x — clean and consistent."
+- "18kts NE, gust 22kts, ratio 1.2x — clean and consistent."
 - "Thermal should add 3-5kts by noon if clouds hold below 50%."
 - "3.4m kite, 24m lines, HA780, Glide220, 85cm mast."
 - "Windswell 0.8m @ 6s from NE — good bumps for downwinding."
