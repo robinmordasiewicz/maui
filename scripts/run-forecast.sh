@@ -3,11 +3,12 @@
 #
 # 1. Pulls all data and generates report JSON
 # 2. Generates AI blog post via Anthropic API
-# 3. Commits new blog post and pushes to GitHub
-# 4. GitHub Actions picks up the push and deploys the updated site
+# 3. Builds Astro site locally
+# 4. Deploys built static files to gh-pages branch
 #
-# Runs locally — no GitHub Actions needed for data collection.
-# Schedule via cron or launchd (see README).
+# Everything runs locally — no GitHub Actions involved.
+# iKitesurf Playwright auth requires local execution (fraud protection).
+# Schedule via OpenClaw cron (see cron jobs).
 #
 # Usage: bash scripts/run-forecast.sh [--no-post]
 #   --no-post  Skip blog post generation (just update report cache)
@@ -40,15 +41,52 @@ if [[ "${1:-}" != "--no-post" ]] && [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
   node scripts/generate-forecast.mjs --file "$JSON_OUT" 2>>"${LOGDIR}/stderr.log"
   echo "[$(date -u +%H:%MZ)] Blog post written."
 
-  # ── 3. Commit and push ─────────────────────────────────────────────
+  # ── 3. Build Astro site locally ────────────────────────────────────
+  echo "[$(date -u +%H:%MZ)] Building Astro site..."
+  cd site && npm run build 2>>"../${LOGDIR}/stderr.log" && cd ..
+  echo "[$(date -u +%H:%MZ)] Site built."
+
+  # ── 4. Deploy to gh-pages branch ──────────────────────────────────
+  echo "[$(date -u +%H:%MZ)] Deploying to gh-pages..."
+
+  # Commit source changes to main
   git add site/src/content/blog/
   if ! git diff --cached --quiet; then
     git commit -m "📡 Forecast: ${DATE} ${TIME} HST"
-    git push
-    echo "[$(date -u +%H:%MZ)] Pushed — GitHub Pages deploy triggered."
-  else
-    echo "[$(date -u +%H:%MZ)] No blog changes to commit."
   fi
+
+  # Push built dist/ to gh-pages branch using a temp worktree
+  DIST_DIR="$(pwd)/site/dist"
+  DEPLOY_TMP="$(mktemp -d)"
+
+  git worktree add --detach "$DEPLOY_TMP" 2>/dev/null || true
+  cd "$DEPLOY_TMP"
+
+  # Create orphan gh-pages branch if it doesn't exist
+  git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
+
+  # Clear everything and copy fresh build
+  git rm -rf . 2>/dev/null || true
+  cp -a "$DIST_DIR"/. .
+  touch .nojekyll
+
+  git add -A
+  if ! git diff --cached --quiet; then
+    git commit -m "🚀 Deploy: ${DATE} ${TIME} HST"
+    git push origin gh-pages --force
+    echo "[$(date -u +%H:%MZ)] Deployed to gh-pages."
+  else
+    echo "[$(date -u +%H:%MZ)] No deploy changes."
+  fi
+
+  # Cleanup worktree
+  REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo /Users/robin/.openclaw/workspace/maui-wx)"
+  cd "$REPO_ROOT"
+  git worktree remove "$DEPLOY_TMP" --force 2>/dev/null || rm -rf "$DEPLOY_TMP"
+
+  # Push main branch source
+  git push origin main 2>/dev/null || true
+  echo "[$(date -u +%H:%MZ)] Source pushed to main."
 else
   echo "[$(date -u +%H:%MZ)] Skipping blog post (no ANTHROPIC_API_KEY or --no-post)."
 fi
