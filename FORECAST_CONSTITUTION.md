@@ -310,6 +310,8 @@ GEAR
   Wing:   [model]   Tail:  [model]
   Mast:   [length]cm   Board: [board]
   Tide during session: [low]-[high]m
+  🌙 [phase] ([illumination]) — Rise: [time] / Set: [time]
+  [tidal_regime note if spring/neap, omit if normal]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 3-DAY

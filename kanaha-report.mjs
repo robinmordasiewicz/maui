@@ -368,6 +368,8 @@ async function main() {
 
     tides: tideList.slice(0, 4).map(t => `${t.type === 'high' ? '⬆' : '⬇'} ${t.time_local} ${t.level_ft}ft`),
 
+    moon: tides?.moon || null,
+
     activities: verdicts,
 
     equipment: equipment ? {
@@ -922,11 +924,18 @@ function printReport(r) {
     }
   }
 
-  // Tides
+  // Tides & Moon
   if (r.tides.length > 0) {
     console.log(`\n${thin}`);
     console.log(`  TIDES`);
     for (const t of r.tides) console.log(`  ${t}`);
+    if (r.moon) {
+      const m = r.moon;
+      console.log(`  🌙 ${m.phase} (${m.illumination})`);
+      if (m.moonrise) console.log(`     Rise: ${m.moonrise}  Set: ${m.moonset || '—'}`);
+      if (m.tidal_note) console.log(`     ${m.tidal_note}`);
+      if (m.closest_phase) console.log(`     Next: ${m.closest_phase.phase} ${m.closest_phase.date}`);
+    }
   }
 
   // Activities
