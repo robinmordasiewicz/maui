@@ -15,7 +15,7 @@
  * Outputs: writes to site/src/content/blog/YYYY-MM-DD.md
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import https from 'https';
@@ -46,6 +46,23 @@ const report = JSON.parse(reportJson);
 const context = readFileSync(join(ROOT, 'CONTEXT.md'), 'utf-8');
 const constitution = readFileSync(join(ROOT, 'FORECAST_CONSTITUTION.md'), 'utf-8');
 
+// ── Load recent debriefs for calibration ─────────────────────────────
+const DEBRIEF_DIR = join(ROOT, 'debriefs');
+let debriefContext = '';
+if (existsSync(DEBRIEF_DIR)) {
+  const debriefFiles = readdirSync(DEBRIEF_DIR)
+    .filter(f => f.endsWith('.json'))
+    .sort()
+    .slice(-3); // last 3 debriefs
+  if (debriefFiles.length > 0) {
+    const debriefs = debriefFiles.map(f => {
+      const d = JSON.parse(readFileSync(join(DEBRIEF_DIR, f), 'utf-8'));
+      return `### Debrief ${d.date}\n- Session quality: ${d.verdict?.session_quality}/6 (${d.verdict?.session_quality_desc})\n- Equipment used: ${d.equipment_used?.kite} kite, ${d.equipment_used?.lines}m lines\n- Verdict correction: ${d.calibration_notes?.verdict_correction || 'none'}\n- Key observations: ${d.observations?.free_text?.substring(0, 200) || 'none'}`;
+    });
+    debriefContext = `\n\nRECENT SESSION DEBRIEFS (ground truth — use these to calibrate your verdict):\n${debriefs.join('\n\n')}`;
+  }
+}
+
 // ── Date + forecast mode ─────────────────────────────────────────────
 const now = new Date();
 const hstHour = parseInt(now.toLocaleString('en-US', { timeZone: 'Pacific/Honolulu', hour: 'numeric', hour12: false }));
@@ -74,7 +91,7 @@ FORECAST CONSTITUTION (follow strictly):
 ${constitution}
 
 Domain knowledge (for your reference only — do not explain to readers):
-${context}`;
+${context}${debriefContext}`;
 
 const forecastFraming = isNextDay
   ? `This is an EVENING PREVIEW forecast for TOMORROW (${dayName}, ${monthDay}), generated at ${timeHST} HST the night before. Current sensor data shows what's happening right now — use it to extrapolate tomorrow's likely conditions. Focus on what to expect, what equipment to prepare, and whether it's worth planning around. Be clear this is a preview and conditions may change overnight.`
@@ -86,14 +103,21 @@ ${JSON.stringify(report, null, 2)}
 
 ${forecastFraming}
 
+CRITICAL RULES (violations in past forecasts — do NOT repeat):
+1. VERDICT must be based on iK-TRRM SESSION WINDOW forecast (the hourly rows), NOT current sensor readings. Current conditions at night are irrelevant to tomorrow's session.
+2. If iK-TRRM shows 12+ kts avg during the session window, the verdict is GO or MARGINAL — never NO-GO.
+3. UNITS: Wind in knots. Temperature in °C. Wave/swell heights in FEET (convert from metres: multiply by 3.28). Tide in metres. Precipitation in mm. Distance in metres.
+4. The 3-day outlook from Open-Meteo is consistently wrong for Kanaha — do NOT use it for verdicts. Use iK-TRRM.
+5. Wind shadow (E direction ≥80°) is an ACCESS problem for experienced riders, not a session cancellation.
+
 Follow the FORECAST CONSTITUTION exactly. Output ONLY the markdown body (no frontmatter). 300 words max.`;
 
 // ── Call Anthropic API ───────────────────────────────────────────────
 function callAnthropic(system, user) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1500,
+      model: 'claude-opus-4-20250514',
+      max_tokens: 2000,
       system,
       messages: [{ role: 'user', content: user }],
     });
@@ -130,10 +154,11 @@ async function main() {
 
   const body = await callAnthropic(systemPrompt, userPrompt);
 
-  // Build frontmatter
-  const verdict = report.verdict || '🏖️ Kanaha Forecast';
+  // Build frontmatter — extract verdict from LLM output
+  const verdictMatch = body.match(/VERDICT:\s*(🟢\s*GO|🟡\s*MARGINAL|🔴\s*NO-GO)/);
+  const verdictText = verdictMatch ? verdictMatch[1] : (report.verdict || '🏖️ Forecast');
   const typeLabel = isNextDay ? 'Preview' : 'Live';
-  const title = `${monthDay} ${typeLabel} — ${verdict.replace(/[🟢🟡🔴]\s*/, '')}`;
+  const title = `${monthDay} ${typeLabel} — ${verdictText}`;
   const description = report.analysis?.session_advice?.[0] || 'Daily Kanaha watersport forecast';
 
   const post = `---
