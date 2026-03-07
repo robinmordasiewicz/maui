@@ -11,7 +11,7 @@
 | Distance / depth / height | **metres (m)** — never feet |
 | Precipitation / rainfall | **mm** — never inches |
 | Tide height | **m** — never feet |
-| Wave height | **ft** — surfers measure in feet; never convert to metres |
+| Wave height / swell height | **ft** — all swell and wave heights in feet; convert metres from buoy/model sources before reporting |
 | Visibility | **km** — never miles |
 | Mast / line length | **cm / m** (already metric — keep as-is) |
 
@@ -299,8 +299,8 @@ WIND
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 WAVES
-  Windswell:    [height]m @ [period]s [dir]
-  Groundswell:  [height]m @ [period]s [dir]   ← omit if flat
+  Windswell:    [height]ft @ [period]s [dir]
+  Groundswell:  [height]ft @ [period]s [dir]   ← omit if flat
   Surfline:     [min]-[max]ft ([label])
   Foil rating:  [EPIC / GOOD / FAIR / POOR]
 
