@@ -59,11 +59,14 @@ if [[ "${1:-}" != "--no-post" ]] && [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
   DIST_DIR="$(pwd)/site/dist"
   DEPLOY_TMP="$(mktemp -d)"
 
-  git worktree add --detach "$DEPLOY_TMP" 2>/dev/null || true
+  # Clean up any stale worktrees before adding
+  git worktree prune 2>/dev/null || true
+  git worktree add "$DEPLOY_TMP" gh-pages 2>/dev/null || {
+    git worktree add --detach "$DEPLOY_TMP" 2>/dev/null || true
+    cd "$DEPLOY_TMP"
+    git checkout --orphan gh-pages
+  }
   cd "$DEPLOY_TMP"
-
-  # Create orphan gh-pages branch if it doesn't exist
-  git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
 
   # Clear everything and copy fresh build
   git rm -rf . 2>/dev/null || true
