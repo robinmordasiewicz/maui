@@ -404,8 +404,9 @@ function analyzeHistoricalPattern(windHistory) {
   };
 }
 
-function predictTaper(currentAvg, currentHstHour, historicalPattern, upwindTrend, pressureGrad, thermalMod = 1.0, cloudHourly = null, thermalSpread = null) {
+function predictTaper(currentAvg, currentHstHour, historicalPattern, upwindTrend, pressureGrad, thermalMod = 1.0, cloudHourly = null, thermalSpread = null, iktrrm = null, nwsWindKts = null) {
   const remainingHours = [];
+  const taper_warnings = [];
 
   // PHYSICAL DIURNAL MODEL: Peak wind is when sun is overhead (11-14h HST).
   // After peak, thermal component fades with sun angle. Evening surges are rare exceptions.
@@ -426,6 +427,28 @@ function predictTaper(currentAvg, currentHstHour, historicalPattern, upwindTrend
     synopticBase = thermalSpread.airport_kts * 1.05;
   } else {
     synopticBase = currentAvg * eveningRetention;
+  }
+
+  // ── Synoptic floor ──────────────────────────────────────────────────
+  // Debrief 2026-03-07: model predicted 11.4kts but actual was 19.3kts.
+  // Root cause: morning cloud suppression gave artificially low baseline,
+  // model anchored on it without considering the strong pressure gradient.
+  // Fix: enforce a floor based on gradient-implied minimum wind.
+  let synopticFloor = 0;
+  if (pressureGrad.strength === 'strong') {
+    synopticFloor = synopticBase * 0.9;
+  } else if (pressureGrad.strength === 'moderate') {
+    synopticFloor = synopticBase * 0.75;
+  }
+
+  // Build iktrrm lookup by hour for cross-checking
+  const iktByHour = {};
+  if (iktrrm && Array.isArray(iktrrm)) {
+    for (const f of iktrrm) {
+      if (f.hour_hst != null && f.avg_kts != null) {
+        iktByHour[f.hour_hst] = f.avg_kts;
+      }
+    }
   }
 
   // Thermal decay curve: peaks at 12-13h, fades to 0 by ~19h
@@ -474,13 +497,30 @@ function predictTaper(currentAvg, currentHstHour, historicalPattern, upwindTrend
       predicted *= modifier;
     }
 
-    // After peak (14h), never exceed current reading — no evening surges
-    if (h > 14 && predicted > currentAvg) predicted = currentAvg;
+    // After peak (14h), cap at max of current reading OR synoptic base * 1.3
+    // (Debrief 2026-03-07: old hard cap prevented predictions from exceeding
+    // a cloud-suppressed morning reading. Synoptic base anchors the ceiling instead.)
+    if (h > 14) {
+      const ceiling = Math.max(currentAvg, synopticBase * 1.3);
+      if (predicted > ceiling) predicted = ceiling;
+    }
 
     // Monotonic non-increasing after 14h
     if (h > 14 && remainingHours.length > 0) {
       const prev = remainingHours[remainingHours.length - 1].predicted_avg_kts;
       if (predicted > prev) predicted = prev;
+    }
+
+    // ── Synoptic floor enforcement ──────────────────────────────────
+    // Never predict below gradient-implied minimum
+    if (predicted < synopticFloor) predicted = synopticFloor;
+
+    // ── iKitesurf cross-check ───────────────────────────────────────
+    // When taper diverges >30% below iktrrm for a given hour, blend upward.
+    // Trust iktrrm more (0.6 weight) since it incorporates mesoscale models.
+    const iktVal = iktByHour[h];
+    if (iktVal != null && predicted < iktVal * 0.7) {
+      predicted = predicted * 0.4 + iktVal * 0.6;
     }
 
     predicted = Math.round(Math.max(0, predicted) * 10) / 10;
@@ -495,6 +535,29 @@ function predictTaper(currentAvg, currentHstHour, historicalPattern, upwindTrend
       confidence: h - currentHstHour < 3 ? 'high' : h - currentHstHour < 6 ? 'medium' : 'low',
     });
   }
+
+  // ── NWS cross-check warning ─────────────────────────────────────
+  // When NWS wind forecast significantly exceeds taper peak, flag it
+  if (nwsWindKts != null && remainingHours.length > 0) {
+    const taperPeak = Math.max(...remainingHours.map(h => h.predicted_avg_kts));
+    if (taperPeak < nwsWindKts * 0.7) {
+      taper_warnings.push(`Taper peak ${taperPeak}kts is ${Math.round((1 - taperPeak / nwsWindKts) * 100)}% below NWS forecast ${nwsWindKts}kts — model may be underestimating due to suppressed baseline`);
+    }
+  }
+
+  // ── iKitesurf peak cross-check warning ──────────────────────────
+  if (Object.keys(iktByHour).length > 0 && remainingHours.length > 0) {
+    const taperPeak = Math.max(...remainingHours.map(h => h.predicted_avg_kts));
+    const iktPeak = Math.max(...Object.values(iktByHour));
+    if (taperPeak < iktPeak * 0.7) {
+      taper_warnings.push(`Taper peak ${taperPeak}kts is ${Math.round((1 - taperPeak / iktPeak) * 100)}% below iKitesurf peak ${iktPeak}kts`);
+    }
+  }
+
+  if (taper_warnings.length > 0) {
+    remainingHours.taper_warnings = taper_warnings;
+  }
+
   return remainingHours;
 }
 

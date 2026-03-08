@@ -267,9 +267,64 @@ async function main() {
   const tideList = tides?.high_low || [];
   const currentTide = tides?.latest_observed;
 
-  // Taper prediction
-  const taper = windPred?.taper_prediction || [];
+  // Taper prediction — cross-check with iKitesurf + NWS
+  const taperRaw = windPred?.taper_prediction || [];
   const synBase = windPred?.thermal_analysis?.estimated_synoptic_base_kts;
+  const taperWarnings = [];
+
+  // Parse NWS wind forecast: "East northeast wind 22 to 25 mph" → 25 mph → ~21.7 kts
+  let nwsWindKts = null;
+  if (nws?.daily?.length > 0) {
+    for (const period of nws.daily) {
+      const match = period.forecast?.match(/wind\s+(\d+)\s+to\s+(\d+)\s+mph/i)
+        || period.forecast?.match(/wind\s+around\s+(\d+)\s+mph/i);
+      if (match) {
+        const mphHigh = parseInt(match[match.length - 1]);
+        nwsWindKts = Math.round(mphHigh * 0.868976 * 10) / 10;
+        break;
+      }
+    }
+  }
+
+  // Build iktrrm hourly lookup (today only)
+  const today = hstDate();
+  const iktByHour = {};
+  let iktPeak = 0;
+  if (iktrrm?.forecast) {
+    for (const f of iktrrm.forecast) {
+      const match = f.time_local?.match(/(\d{4}-\d{2}-\d{2}) (\d{2}):00/);
+      if (match && match[1] === today) {
+        const h = parseInt(match[2]);
+        iktByHour[h] = f.wind_speed_kts;
+        if (f.wind_speed_kts > iktPeak) iktPeak = f.wind_speed_kts;
+      }
+    }
+  }
+
+  // Apply iKitesurf cross-check: blend upward when taper diverges >30% below iktrrm
+  const taper = taperRaw.map(t => {
+    const iktVal = iktByHour[t.hour_hst];
+    if (iktVal != null && t.predicted_avg_kts < iktVal * 0.7) {
+      return { ...t, predicted_avg_kts: Math.round((t.predicted_avg_kts * 0.4 + iktVal * 0.6) * 10) / 10, iktrrm_blended: true };
+    }
+    return t;
+  });
+
+  // NWS cross-check warning
+  if (nwsWindKts != null && taper.length > 0) {
+    const taperPeak = Math.max(...taper.map(t => t.predicted_avg_kts));
+    if (taperPeak < nwsWindKts * 0.7) {
+      taperWarnings.push(`Taper peak ${taperPeak}kts is ${Math.round((1 - taperPeak / nwsWindKts) * 100)}% below NWS forecast ${nwsWindKts}kts`);
+    }
+  }
+
+  // iKitesurf peak cross-check warning
+  if (iktPeak > 0 && taper.length > 0) {
+    const taperPeak = Math.max(...taper.map(t => t.predicted_avg_kts));
+    if (taperPeak < iktPeak * 0.7) {
+      taperWarnings.push(`Taper peak ${taperPeak}kts is ${Math.round((1 - taperPeak / iktPeak) * 100)}% below iKitesurf peak ${iktPeak}kts`);
+    }
+  }
 
   // Buoys
   const buoys = windPred?.buoy_data || {};
@@ -322,7 +377,9 @@ async function main() {
       kts: t.predicted_avg_kts,
       thermal_pct: t.thermal_fraction,
       phase: t.phase,
+      ...(t.iktrrm_blended ? { iktrrm_blended: true } : {}),
     })),
+    taper_warnings: taperWarnings.length > 0 ? taperWarnings : undefined,
 
     // iK-TRRM premium model forecast (hourly, same data as iKitesurf website graph)
     iktrrm_forecast: iktrrm?.forecast ? iktrrm.forecast.map(f => {
@@ -472,6 +529,7 @@ async function main() {
       taper, synBase, buoys, medUpwind, ua, hour,
       windPred, thermal,
       precip: buildPrecipSummary(nws, meteo),
+      iktPeak, taperWarnings,
     }),
   };
 
@@ -693,6 +751,29 @@ function buildAnalysisContext(d) {
       severity: 'notable',
       detail: `Far-field buoys averaging ${Math.round(buoyAvg)}kts vs Kanaha ${d.windAvg}kts (${Math.round(buoyAvg - d.windAvg)}kts difference). ${buoyAvg > d.windAvg ? 'Kanaha suppressed — likely heavy cloud cover killing thermal boost, or local terrain shadowing.' : 'Kanaha enhanced — strong thermal boost or venturi effect amplifying beyond open-ocean trade strength.'}`,
     });
+  }
+
+  // Taper vs iKitesurf divergence
+  if (d.iktPeak > 0 && d.taper.length > 0) {
+    const taperPeak = Math.max(...d.taper.map(t => t.kts));
+    if (taperPeak < d.iktPeak * 0.7) {
+      ctx.anomalies.push({
+        type: 'taper_iktrrm_divergence',
+        severity: 'significant',
+        detail: `Taper model peak ${taperPeak}kts is ${Math.round((1 - taperPeak / d.iktPeak) * 100)}% below iKitesurf model peak ${d.iktPeak}kts. Taper may be anchored on suppressed baseline (cloud cover, early morning reading). Trust iKitesurf for peak estimate.`,
+      });
+    }
+  }
+
+  // Surface taper warnings from NWS/iktrrm cross-checks
+  if (d.taperWarnings?.length > 0) {
+    for (const w of d.taperWarnings) {
+      ctx.anomalies.push({
+        type: 'taper_cross_check',
+        severity: 'warning',
+        detail: w,
+      });
+    }
   }
 
   // ── Correlations ───────────────────────────────────────────────
