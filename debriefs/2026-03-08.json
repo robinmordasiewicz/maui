@@ -31,7 +31,8 @@
   "verdict": {
     "session_quality": 4,
     "session_quality_desc": "Good but challenging",
-    "equipment_correct": true
+    "equipment_correct": false,
+    "equipment_notes": "2.2m was too small at 19-20kts with gusty E conditions. Rode 2.8m instead — better power management through lulls while still depowerable in gusts."
   },
 
   "calibration_notes": {
