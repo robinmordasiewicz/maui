@@ -1,0 +1,51 @@
+{
+  "date": "2026-03-08",
+  "session_window": "11:00-16:00 HST",
+  "session_type": "kite_foil",
+
+  "forecast": {
+    "verdict": "GO",
+    "predicted_avg_kts": 16.5,
+    "predicted_gust_kts": 22,
+    "predicted_direction": "ENE",
+    "iktrrm_session_peak_kts": 16.9,
+    "taper_peak_kts": 21.8,
+    "synoptic_base_kts": 14.7,
+    "pressure_gradient": "strong",
+    "cloud_forecast_pct": 46,
+    "wind_shadow_predicted": false,
+    "nws_wind": "10 to 17 mph, gusts 24 mph"
+  },
+
+  "actual": {
+    "wind_avg_kts": 19.6,
+    "wind_gust_kts": 26.4,
+    "gust_ratio": 1.35,
+    "direction": "ENE",
+    "direction_rotated_east": true,
+    "wind_shadow_experienced": true,
+    "launch_difficulty": "very difficult",
+    "notes": "Very windy, more gusty than Mar 7, very easterly direction made launch and landing very difficult"
+  },
+
+  "verdict": {
+    "session_quality": 4,
+    "session_quality_desc": "Good but challenging",
+    "equipment_correct": true
+  },
+
+  "calibration_notes": {
+    "verdict_correction": "Verdict was correct (GO) but underestimated wind strength again",
+    "wind_delta_kts": 3.1,
+    "wind_delta_pct": 19,
+    "pattern": "Second consecutive day where actual wind significantly exceeded iKTRRM forecast. Strong pressure gradient (4.0 hPa to N buoy) + clear morning skies + strong thermal (Δ4.7°C) combined to overshoot. Upside miss identified in pre-session analysis was correct.",
+    "gustiness": "Higher gust ratio than forecast — 1.35x at 11am reading, rider reported more gusty during session",
+    "direction_issue": "Easterly rotation made launch/landing very difficult — same wind shadow pattern as Mar 4-6 but with stronger wind making it harder",
+    "key_learning": "Two consecutive days of overshooting iKTRRM by 15-20%. When pressure gradient is 'strong' (>3 hPa), iKTRRM appears to systematically underforecast Kanaha by ~3kts. Consider adding a gradient-based bias correction to iKTRRM forecasts."
+  },
+
+  "observations": {
+    "free_text": "Similar session to March 7 — very windy, more gusty. Very easterly direction made launch and landing very difficult. Wind shadow pattern persists in E conditions with strong trades.",
+    "comparison": "Near-identical to Mar 7: strong trades, E rotation, wind shadow. Gustier today."
+  }
+}
