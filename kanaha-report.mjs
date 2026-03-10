@@ -50,6 +50,7 @@ const TTL = {
   'forecast-nws':       60 * 60,   // 1 hour
   'three-day-outlook':  60 * 60,   // 1 hour — 3-day session outlook
   'north-pacific-swell': 60 * 60,  // 1 hour — North Pacific storm & swell early warning
+  'synoptic-pressure':  60 * 60,   // 1 hour — Large-area pressure systems & trade wind gradient
   'swell-surfline':      30 * 60,  // 30 min — Surfline surf height & swell components
   'alerts-nws':          15 * 60,  // 15 min — NWS active alerts (marine + land)
   'radar-mrms':          5 * 60,   // 5 min — MRMS radar (triggered on rain events)
@@ -206,6 +207,7 @@ async function main() {
   const npSwell    = WIND_ONLY ? null : runModule('north-pacific-swell');
   const surfline   = WIND_ONLY ? null : runModule('swell-surfline', '72');
   const nwsAlerts  = WIND_ONLY ? null : runModule('alerts-nws');
+  const synoptic   = WIND_ONLY ? null : runModule('synoptic-pressure');
 
   // Radar: only pull when precip warrants it (moderate/heavy/storm)
   const precipCheck = buildPrecipSummary(nws, meteo);
@@ -483,6 +485,22 @@ async function main() {
 
     // Wave event mode — triggered when cancel-plans swell predicted
     wave_event_mode: npSwell?.summary?.cancel_plans_alert === true,
+
+    // Synoptic pressure — large-area pressure systems & trade wind gradient
+    synoptic_pressure: synoptic ? {
+      trade_gradient_today: synoptic.summary?.trade_gradient_today,
+      trade_gradient_trend: synoptic.summary?.trade_gradient_trend,
+      approaching_storm: synoptic.summary?.approaching_storm,
+      storm_severity: synoptic.summary?.storm_severity,
+      days_until_storm: synoptic.summary?.days_until_storm,
+      buoy_pressure_consensus: synoptic.summary?.buoy_pressure_consensus,
+      pre_storm_light_wind_window: synoptic.summary?.pre_storm_light_wind_window,
+      gradient_forecast: synoptic.current?.trade_gradient?.trend_7day,
+      approaching_systems: synoptic.approaching_systems,
+      storm_timeline: synoptic.storm_timeline,
+      trade_impact_timeline: synoptic.trade_impact_timeline,
+      buoy_pressures: synoptic.current?.buoy_pressures,
+    } : null,
 
     wind_shadow_risk:  windShadowRisk,
     wind_shadow_desc:  windShadowDesc,
